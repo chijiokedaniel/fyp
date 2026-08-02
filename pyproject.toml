@@ -13,4 +13,5 @@ dependencies = [
     # pin to latest available 0.3.x release (0.4.0 not available in current indexes)
     "django-cloudinary-storage<=0.3.0",
     "python-dotenv>=1.0.0",
+    "dj-database-url>=1.0.0",
 ]
