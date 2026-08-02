@@ -11,8 +11,7 @@ logger = logging.getLogger(__name__)
 
 # Credentials & Config (using Django settings as primary source, fallback to environment, and then hardcoded fallback)
 QSTACK_NOTIFICATION_API_KEY = getattr(settings, "QSTACK_NOTIFICATION_API_KEY", None) or os.getenv("QSTACK_NOTIFICATION_API_KEY")
-QSTACK_NOTIFICATION_SERVER_URL = getattr(settings, "QSTACK_NOTIFICATION_SERVER_URL", None) or os.getenv("QSTACK_NOTIFICATION_SERVER_URL") or "https://notification.qstack.com.ng/api/v1/notifications/notify"
-
+QSTACK_NOTIFICATION_SERVER_URL = getattr(settings, "QSTACK_NOTIFICATION_SERVER_URL", None) or os.getenv("QSTACK_NOTIFICATION_SERVER_URL") 
 class NotificationService:
     
     @staticmethod

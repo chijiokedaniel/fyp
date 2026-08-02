@@ -157,18 +157,22 @@ def logout_view(request):
 
 @patient_required
 def doctor_list(request):
+
     doctors = User.objects.filter(role=UserRole.DOCTOR, doctor_profile__approved=True)
     specialty = request.GET.get('specialty')
     if specialty:
         doctors = doctors.filter(doctor_profile__specialty=specialty)
-    return render(
-        request,
-        'app/doctor_list.html',
-        {
+
+        context = {
             'doctors': doctors,
             'specialties': SpecialtyChoices.choices,
             'selected_specialty': specialty,
-        },
+        }
+
+    return render(
+        request,
+        'app/doctor_list.html',
+        context=context
     )
 
 

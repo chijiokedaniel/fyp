@@ -72,6 +72,7 @@
 </head>
 <body>
 <header>
+
     <nav>
         <div class="left">
             <a href="{% url 'app:home' %}" class="nav-icon">
@@ -155,6 +156,43 @@
             {% endif %}
         </div>
     </nav>
+    {% if messages %}
+    <div
+      class="fixed top-5 right-5 z-50 max-w-md w-full space-y-3 px-4 sm:px-0"
+    >
+      {% for message in messages %}
+      <div
+        class="toast-card p-4 bg-slate-900 text-white rounded-2xl shadow-2xl border border-slate-700 flex items-start justify-between transition-all duration-300 transform translate-y-0 opacity-100"
+        role="alert"
+      >
+        <div class="flex items-center space-x-3">
+          <span class="text-sm font-medium tracking-wide">{{ message }}</span>
+        </div>
+        <button
+          onclick="this.parentElement.remove()"
+          class="text-slate-400 hover:text-white p-1 text-lg font-bold leading-none ml-4 transition"
+        >
+          &times;
+        </button>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const toasts = document.querySelectorAll('.toast-card');
+        toasts.forEach(function(toast) {
+          setTimeout(function() {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(-10px)';
+            setTimeout(function() {
+              if (toast.parentElement) toast.remove();
+            }, 300);
+          }, 4000);
+        });
+      });
+    </script>
 </header>
 
 <div class="main-container">
