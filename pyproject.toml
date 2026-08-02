@@ -8,4 +8,9 @@ dependencies = [
     "django>=6.0.7",
     "pillow>=12.3.0",
     "requests>=2.34.2",
+    "whitenoise>=6.5.0",
+    "cloudinary>=1.32.0",
+    # pin to latest available 0.3.x release (0.4.0 not available in current indexes)
+    "django-cloudinary-storage<=0.3.0",
+    "python-dotenv>=1.0.0",
 ]
