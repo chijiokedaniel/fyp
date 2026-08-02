@@ -15,3 +15,7 @@ wheels/
 *.pyc
 *.sqlite3
 .env.**
+# Environment files
+.env
+.env.*
+!.env.example
