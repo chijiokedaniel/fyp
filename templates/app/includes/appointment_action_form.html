@@ -1,0 +1,5 @@
+<form method="post" action="{% url 'app:respond_appointment' appointment.pk %}" style="display:inline">
+    {% csrf_token %}
+    <button name="action" value="accept" type="submit" style="background: #10b981; color: #fff; padding:6px 10px; border-radius:6px; margin-right:6px;">Approve</button>
+    <button name="action" value="reject" type="submit" style="background: #ef4444; color: #fff; padding:6px 10px; border-radius:6px;">Reject</button>
+</form>

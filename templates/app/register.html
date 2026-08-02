@@ -1,0 +1,32 @@
+{% extends 'app/base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block main_content %}
+<div class="content" style="max-width: 600px; margin: auto;">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    <div class="card">
+        <h1 style="margin-top: 0;">{{ title }}</h1>
+        <p style="color: #6b7280; margin-bottom: 24px;">Create your patient account to start booking appointments with qualified doctors.</p>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            {% for field in form %}
+                <div class="form-row">
+                    {{ field.label_tag }}
+                    {{ field }}
+                    {{ field.errors }}
+                </div>
+            {% endfor %}
+            <button type="submit" style="width: 100%;">Create Account</button>
+        </form>
+        <p style="text-align: center; margin-top: 16px; color: #6b7280;">
+            Already have an account? <a href="{% url 'app:login' %}" style="color: #2563eb;">Login here</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

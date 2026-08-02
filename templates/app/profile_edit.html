@@ -1,0 +1,36 @@
+{% extends 'app/base.html' %}
+{% block title %}Edit Profile{% endblock %}
+{% block main_content %}
+<div class="content" style="max-width: 700px; margin: auto;">
+    <div class="card">
+        <h1 style="margin-top: 0;">Edit Profile</h1>
+        {% if user.role == 'patient' %}
+            <form method="post">
+                {% csrf_token %}
+                {{ form.non_field_errors }}
+                {% for field in form %}
+                    <div class="form-row">
+                        {{ field.label_tag }}
+                        {{ field }}
+                        {{ field.errors }}
+                    </div>
+                {% endfor %}
+                <button type="submit" style="width: 100%;">Save Changes</button>
+            </form>
+        {% elif user.role == 'doctor' %}
+            <form method="post">
+                {% csrf_token %}
+                {{ form.non_field_errors }}
+                {% for field in form %}
+                    <div class="form-row">
+                        {{ field.label_tag }}
+                        {{ field }}
+                        {{ field.errors }}
+                    </div>
+                {% endfor %}
+                <button type="submit" style="width: 100%;">Save Changes</button>
+            </form>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

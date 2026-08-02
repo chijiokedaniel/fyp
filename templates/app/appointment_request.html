@@ -1,0 +1,46 @@
+{% extends 'app/base_patient.html' %}
+{% block title %}Request Appointment{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+{% endblock %}
+
+{% block patient_content %}
+<h1>Request Appointment with Dr. {{ doctor.get_full_name }}</h1>
+<p style="margin-bottom: 20px; color: #4b5563;"><strong>Specialty:</strong> {{ doctor.doctor_profile.get_specialty_display }}</p>
+<form method="post">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    {% for field in form %}
+        <div class="form-row">
+            {{ field.label_tag }}
+            {{ field }}
+            {% if field.name == 'requested_date' %}
+                <small style="color: #6b7280; font-size: 12px; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    Click above to open the date &amp; time picker calendar.
+                </small>
+            {% endif %}
+            {{ field.errors }}
+        </div>
+    {% endfor %}
+    <button type="submit" style="margin-top: 12px;">Send Appointment Request</button>
+</form>
+
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var dateInput = document.getElementById('id_requested_date') || document.querySelector('input[name="requested_date"]');
+        if (dateInput) {
+            flatpickr(dateInput, {
+                enableTime: true,
+                dateFormat: "Y-m-d H:i",
+                minDate: "today",
+                time_24hr: false,
+                minuteIncrement: 15,
+                defaultHour: 9,
+                allowInput: true
+            });
+        }
+    });
+</script>
+{% endblock %}

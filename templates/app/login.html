@@ -1,0 +1,58 @@
+{% extends 'app/base.html' %}
+{% block title %}Login{% endblock %}
+{% block main_content %}
+<div class="content" style="max-width: 500px; margin: auto;">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if form.non_field_errors %}
+        <div id="login-error-toast" class="toast-modal top-right-toast toast-warning">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 9v4"/>
+                <path d="M12 17h.01"/>
+                <path d="M10.29 3.86l-7.02 12.14A2 2 0 0 0 5 19h14a2 2 0 0 0 1.73-2.99L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            </svg>
+            <div>
+                {% for error in form.non_field_errors %}
+                    {{ error }}
+                {% endfor %}
+            </div>
+            <button type="button" class="toast-close" onclick="document.getElementById('login-error-toast').style.display='none'">×</button>
+        </div>
+    {% endif %}
+
+    <div class="card">
+        <h1 style="margin-top: 0;">Sign In to Your Account</h1>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            {% for field in form %}
+                <div class="form-row">
+                    {{ field.label_tag }}
+                    {{ field }}
+                    {{ field.errors }}
+                </div>
+            {% endfor %}
+            <button type="submit" style="width: 100%;">Login</button>
+        </form>
+        <p style="text-align: center; margin-top: 16px; color: #6b7280;">
+            Don't have an account? <a href="{% url 'app:patient_register' %}" style="color: #2563eb;">Register as patient</a> or <a href="{% url 'app:doctor_apply' %}" style="color: #2563eb;">apply as doctor</a>
+        </p>
+    </div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var toast = document.getElementById('login-error-toast');
+        if (toast) {
+            setTimeout(function() {
+                toast.style.display = 'none';
+            }, 6000);
+        }
+    });
+</script>
+{% endblock %}

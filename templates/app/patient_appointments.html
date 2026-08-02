@@ -1,0 +1,42 @@
+{% extends 'app/base_patient.html' %}
+{% block title %}My Appointments{% endblock %}
+{% block patient_content %}
+<h1>My Appointments</h1>
+
+{% if appointments %}
+    <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+        <thead>
+            <tr style="background: #f3f4f6; border-bottom: 2px solid #e5e7eb;">
+                <th style="padding: 12px; text-align: left;">Doctor</th>
+                <th style="padding: 12px; text-align: left;">Specialty</th>
+                <th style="padding: 12px; text-align: left;">Reason</th>
+                <th style="padding: 12px; text-align: left;">Date & Time</th>
+                <th style="padding: 12px; text-align: left;">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for appointment in appointments %}
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                    <td style="padding: 12px;">Dr. {{ appointment.doctor.get_full_name }}</td>
+                    <td style="padding: 12px;">{{ appointment.get_specialty_display }}</td>
+                    <td style="padding: 12px;">{{ appointment.reason }}</td>
+                    <td style="padding: 12px;">{{ appointment.requested_date|date:"M d, Y H:i" }}</td>
+                    <td style="padding: 12px;">
+                        {% if appointment.status == 'requested' %}
+                            <span style="background: #fef3c7; color: #92400e; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Pending</span>
+                        {% elif appointment.status == 'confirmed' %}
+                            <span style="background: #d1fae5; color: #065f46; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Confirmed</span>
+                        {% elif appointment.status == 'completed' %}
+                            <span style="background: #e0e7ff; color: #3730a3; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Completed</span>
+                        {% elif appointment.status == 'cancelled' %}
+                            <span style="background: #fee2e2; color: #7f1d1d; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Cancelled</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p style="color: #6b7280; font-style: italic;">No appointments found. <a href="{% url 'app:doctor_list' %}" style="color: #2563eb;">Browse doctors</a> to request an appointment.</p>
+{% endif %}
+{% endblock %}
