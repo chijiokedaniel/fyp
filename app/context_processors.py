@@ -1,16 +1,18 @@
+from datetime import timedelta
 from django.utils import timezone
 from app.models import Appointment, UserRole
 from notifications.models.notification import Notification
 
 
 def appointment_counts(request):
-    """Context processor to add appointment counts, upcoming accepted appointment reminders, and unread notification count to all templates."""
+    """Context processor to add appointment counts, upcoming accepted appointment reminders, pending post-appointment feedback, and unread notification count to all templates."""
     context = {
         'appointment_count': 0,
         'request_count': 0,
         'unread_notifications_count': 0,
         'upcoming_accepted_count': 0,
         'upcoming_next_appointment': None,
+        'pending_feedback_appointment': None,
     }
 
     if request.user.is_authenticated:
@@ -29,6 +31,15 @@ def appointment_counts(request):
 
             context['upcoming_accepted_count'] = upcoming_qs.count()
             context['upcoming_next_appointment'] = upcoming_qs.first()
+
+            # Check if an appointment occurred at least 1 hour ago and feedback has not been submitted yet
+            one_hour_ago = now - timedelta(hours=1)
+            context['pending_feedback_appointment'] = Appointment.objects.filter(
+                patient=request.user,
+                status=Appointment.Status.CONFIRMED,
+                confirmed_date__lte=one_hour_ago,
+                feedback_submitted_at__isnull=True
+            ).select_related('doctor', 'doctor__doctor_profile').order_by('confirmed_date').first()
 
         elif request.user.role == UserRole.DOCTOR:
             context['request_count'] = Appointment.objects.filter(

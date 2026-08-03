@@ -1,3 +1,4 @@
+import random
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
@@ -91,6 +92,8 @@ class Appointment(models.Model):
         CONFIRMED = 'confirmed', 'Confirmed'
         COMPLETED = 'completed', 'Completed'
         CANCELLED = 'cancelled', 'Cancelled'
+        ABSENT = 'absent', 'Patient Absent'
+        DISPUTED = 'disputed', 'Disputed'
 
     patient = models.ForeignKey(User, limit_choices_to={'role': UserRole.PATIENT}, on_delete=models.CASCADE, related_name='patient_appointments')
     doctor = models.ForeignKey(User, limit_choices_to={'role': UserRole.DOCTOR}, on_delete=models.CASCADE, related_name='doctor_appointments')
@@ -101,9 +104,30 @@ class Appointment(models.Model):
     confirmed_date = models.DateTimeField(null=True, blank=True)
     rejection_reason = models.TextField(blank=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.REQUESTED)
+    
+    # Verification & Consultation Completion Fields
+    verification_pin = models.CharField(max_length=6, blank=True, default='')
+    doctor_completed = models.BooleanField(default=False)
+    doctor_completed_at = models.DateTimeField(null=True, blank=True)
+    doctor_notes = models.TextField(blank=True)
+    patient_showed_up = models.BooleanField(null=True, blank=True)
+
+    # Post-Appointment Patient Feedback Fields
+    doctor_showed_up = models.BooleanField(null=True, blank=True)
+    patient_feedback = models.TextField(blank=True)
+    rating = models.PositiveSmallIntegerField(null=True, blank=True)
+    feedback_submitted_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def generate_verification_pin(self):
+        if not self.verification_pin:
+            self.verification_pin = f"{random.randint(100000, 999999)}"
+
+    def save(self, *args, **kwargs):
+        if self.status == self.Status.CONFIRMED and not self.verification_pin:
+            self.generate_verification_pin()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         date_str = self.confirmed_date.strftime('%Y-%m-%d %H:%M') if self.confirmed_date else self.requested_date.strftime('%Y-%m-%d %H:%M')
         return f'Appointment for {self.patient.get_full_name()} with Dr. {self.doctor.get_full_name()} on {date_str}'
-

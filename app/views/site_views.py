@@ -15,6 +15,8 @@ from app.views.doctor_views import (
     doctor_pending_approval,
     doctor_working_hours,
     respond_appointment,
+    complete_consultation,
+    mark_patient_absent,
 )
 from app.views.patient_views import (
     doctor_list,
@@ -23,6 +25,7 @@ from app.views.patient_views import (
     patient_onboarding,
     patient_register,
     request_appointment,
+    submit_appointment_feedback,
 )
 from app.views.profile_views import edit_profile
 
@@ -44,4 +47,7 @@ __all__ = [
     'doctor_appointments',
     'edit_profile',
     'respond_appointment',
+    'submit_appointment_feedback',
+    'complete_consultation',
+    'mark_patient_absent',
 ]

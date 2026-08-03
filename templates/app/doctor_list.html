@@ -158,15 +158,27 @@
                 </div>
 
                 <div>
-                    <a href="{% url 'app:request_appointment' doctor.pk %}" class="book-btn">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                            <line x1="16" y1="2" x2="16" y2="6"/>
-                            <line x1="8" y1="2" x2="8" y2="6"/>
-                            <line x1="3" y1="10" x2="21" y2="10"/>
-                        </svg>
-                        Book Appointment
-                    </a>
+                    {% if doctor.pk in active_doctor_ids %}
+                        <div style="margin-top: 14px;">
+                            <span style="display: block; font-size: 11.5px; font-weight: 700; color: #b45309; background: #fffbeb; border: 1px solid #fcd34d; padding: 6px 10px; border-radius: 6px; margin-bottom: 8px; text-align: center;">
+                                ⏳ Active Appointment Pending
+                            </span>
+                            <a href="{% url 'app:patient_appointments' %}" style="width: 100%; background: #64748b; color: #ffffff; font-weight: 600; font-size: 13.5px; padding: 9px; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-sizing: border-box;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                View My Appointment
+                            </a>
+                        </div>
+                    {% else %}
+                        <a href="{% url 'app:request_appointment' doctor.pk %}" class="book-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                                <line x1="16" y1="2" x2="16" y2="6"/>
+                                <line x1="8" y1="2" x2="8" y2="6"/>
+                                <line x1="3" y1="10" x2="21" y2="10"/>
+                            </svg>
+                            Book Appointment
+                        </a>
+                    {% endif %}
                 </div>
             </div>
         {% endfor %}

@@ -18,6 +18,9 @@ from app.views.site_views import (
     request_appointment,
     edit_profile,
     respond_appointment,
+    submit_appointment_feedback,
+    complete_consultation,
+    mark_patient_absent,
 )
 
 app_name = 'app'
@@ -37,6 +40,7 @@ urlpatterns = [
     path('patient/appointments/', patient_appointments, name='patient_appointments'),
     path('doctors/', doctor_list, name='doctor_list'),
     path('doctors/<int:doctor_pk>/book/', request_appointment, name='request_appointment'),
+    path('appointment/<int:appointment_pk>/feedback/', submit_appointment_feedback, name='submit_appointment_feedback'),
     path('profile/edit/', edit_profile, name='profile_edit'),
     path('appointment/<int:appointment_pk>/respond/', respond_appointment, name='respond_appointment'),
     
@@ -44,4 +48,6 @@ urlpatterns = [
     path('doctor/dashboard/', doctor_dashboard, name='doctor_dashboard'),
     path('doctor/appointments/', doctor_appointments, name='doctor_appointments'),
     path('doctor/working-hours/', doctor_working_hours, name='doctor_working_hours'),
+    path('doctor/appointment/<int:appointment_pk>/complete/', complete_consultation, name='complete_consultation'),
+    path('doctor/appointment/<int:appointment_pk>/absent/', mark_patient_absent, name='mark_patient_absent'),
 ]

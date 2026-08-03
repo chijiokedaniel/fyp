@@ -1,9 +1,9 @@
+from datetime import datetime
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from datetime import datetime
 
 from app.decorators import doctor_required
 from app.forms.auth_forms import DoctorApplicationForm
@@ -164,7 +164,6 @@ def respond_appointment(request, appointment_pk):
                     except ValueError:
                         pass
 
-            # Default to 09:00 AM if no time parsed
             if not time_obj:
                 time_obj = datetime.strptime('09:00', '%H:%M').time()
 
@@ -173,16 +172,17 @@ def respond_appointment(request, appointment_pk):
 
             appointment.confirmed_date = confirmed_dt
             appointment.status = Appointment.Status.CONFIRMED
+            appointment.generate_verification_pin()
             appointment.save()
 
             formatted_date = confirmed_dt.strftime("%b %d, %Y at %I:%M %p")
-            messages.success(request, f'Appointment confirmed for {formatted_date}.')
+            messages.success(request, f'Appointment confirmed for {formatted_date}. Consultation Verification PIN: {appointment.verification_pin}')
 
             NotificationService.send_notification(
                 recipient=appointment.patient,
                 actor=request.user,
                 title="Appointment Confirmed 🗓️",
-                message=f"Dr. {doctor_name} confirmed your appointment for {formatted_date}.",
+                message=f"Dr. {doctor_name} confirmed your appointment for {formatted_date}. Your Verification PIN is: {appointment.verification_pin}.",
                 target_obj=appointment,
                 category="appointment_response",
                 type="success"
@@ -205,6 +205,93 @@ def respond_appointment(request, appointment_pk):
                 category="appointment_response",
                 type="warning"
             )
+
+    return redirect('app:doctor_appointments')
+
+
+@doctor_required
+def complete_consultation(request, appointment_pk):
+    """Doctor completes a consultation by verifying the patient's secret PIN and logging clinical notes."""
+    appointment = get_object_or_404(Appointment, pk=appointment_pk, doctor=request.user)
+
+    if request.method == 'POST':
+        entered_pin = request.POST.get('verification_pin', '').strip()
+        doctor_notes = request.POST.get('doctor_notes', '').strip()
+
+        # Secret PIN Verification Check
+        if entered_pin != appointment.verification_pin:
+            messages.error(
+                request,
+                f"❌ Verification Failed: The 6-digit PIN '{entered_pin}' does not match the patient's code. "
+                f"Please ask the patient for their secret Verification PIN from their app screen."
+            )
+            return redirect('app:doctor_appointments')
+
+        appointment.doctor_completed = True
+        appointment.doctor_completed_at = timezone.now()
+        appointment.patient_showed_up = True
+        appointment.doctor_showed_up = True
+        appointment.doctor_notes = doctor_notes
+        appointment.status = Appointment.Status.COMPLETED
+        appointment.save()
+
+        formatted_date = appointment.confirmed_date.strftime("%b %d, %Y") if appointment.confirmed_date else ""
+        patient_name = appointment.patient.get_full_name() or appointment.patient.email
+        doctor_name = request.user.get_full_name() or request.user.email
+
+        NotificationService.send_notification(
+            recipient=appointment.patient,
+            actor=request.user,
+            title="Consultation Verified & Completed 🩺",
+            message=f"Dr. {doctor_name} successfully verified your 6-digit PIN and completed your consultation for {formatted_date}.",
+            target_obj=appointment,
+            category="appointment",
+            type="success"
+        )
+
+        messages.success(request, f"✅ PIN Verified! Consultation for {patient_name} marked as completed with logged clinical notes!")
+
+    return redirect('app:doctor_appointments')
+
+
+@doctor_required
+def mark_patient_absent(request, appointment_pk):
+    """Doctor marks patient absent after 1 hour from confirmed appointment time without needing PIN."""
+    from datetime import timedelta
+    appointment = get_object_or_404(Appointment, pk=appointment_pk, doctor=request.user)
+
+    if request.method == 'POST':
+        now = timezone.now()
+        # Enforce 1-Hour Elapsed Rule
+        if appointment.confirmed_date and now < appointment.confirmed_date + timedelta(hours=1):
+            messages.error(
+                request,
+                "⚠️ Rule Notice: You can only mark a patient as Absent/No-Show after 1 hour has elapsed from the scheduled appointment time."
+            )
+            return redirect('app:doctor_appointments')
+
+        appointment.status = Appointment.Status.ABSENT
+        appointment.patient_showed_up = False
+        appointment.doctor_completed = True
+        appointment.doctor_completed_at = now
+        appointment.doctor_notes = request.POST.get('doctor_notes', 'Patient failed to show up for scheduled appointment. Marked absent after 1 hour elapsed.')
+        appointment.save()
+
+        formatted_date = appointment.confirmed_date.strftime("%b %d, %Y at %I:%M %p") if appointment.confirmed_date else ""
+        patient_name = appointment.patient.get_full_name() or appointment.patient.email
+        doctor_name = request.user.get_full_name() or request.user.email
+
+        NotificationService.send_notification(
+            recipient=appointment.patient,
+            actor=request.user,
+            title="Appointment Marked Absent ⚠️",
+            message=f"Dr. {doctor_name} marked your appointment on {formatted_date} as Absent (No-Show) because 1 hour elapsed without PIN verification.",
+            target_obj=appointment,
+            category="appointment",
+            type="warning"
+        )
+
+        messages.info(request, f"Patient {patient_name} marked as ABSENT (No-Show).")
 
     return redirect('app:doctor_appointments')
 
@@ -240,10 +327,9 @@ def doctor_working_hours(request):
         days_data.append({
             'day_code': day_code,
             'day_name': day_name,
-            'is_available': wh.is_available if wh else (day_code < 5),  # default Mon-Fri available
+            'is_available': wh.is_available if wh else (day_code < 5),
             'start_time': wh.start_time.strftime('%H:%M') if wh else '09:00',
             'end_time': wh.end_time.strftime('%H:%M') if wh else '17:00',
         })
 
     return render(request, 'app/doctor_working_hours.html', {'days_data': days_data})
-

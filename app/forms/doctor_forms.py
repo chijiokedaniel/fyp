@@ -20,16 +20,39 @@ class AppointmentRequestForm(forms.ModelForm):
         model = Appointment
         fields = ['requested_date', 'specialty', 'reason', 'notes']
         widgets = {
-            'notes': forms.Textarea(attrs={'rows': 4}),
+            'specialty': forms.Select(attrs={
+                'style': 'width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-family: inherit; font-size: 14px; background: #ffffff;'
+            }),
+            'reason': forms.Textarea(attrs={
+                'rows': 3,
+                'placeholder': 'Describe your primary health concern or reason for visit...',
+                'style': 'width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-family: inherit; font-size: 14px; min-height: 90px; resize: vertical;'
+            }),
+            'notes': forms.Textarea(attrs={
+                'rows': 4,
+                'placeholder': 'Additional notes for the doctor (optional)...',
+                'style': 'width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-family: inherit; font-size: 14px; min-height: 100px; resize: vertical;'
+            }),
         }
         labels = {
             'specialty': 'Problem specialty',
             'reason': 'Primary concern',
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, doctor=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['specialty'].choices = SpecialtyChoices.choices
+
+        if doctor and hasattr(doctor, 'doctor_profile') and doctor.doctor_profile:
+            self.fields['specialty'].initial = doctor.doctor_profile.specialty
+            self.fields['specialty'].disabled = True
+            self.fields['specialty'].widget.attrs['style'] = (
+                'width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; '
+                'font-family: inherit; font-size: 14px; background: #f1f5f9; color: #64748b; cursor: not-allowed;'
+            )
+            doc_name = doctor.get_full_name() or doctor.email
+            self.fields['specialty'].help_text = f"Locked to Dr. {doc_name}'s specialty."
+
         # Set minimum selectable date to today
         today_str = timezone.now().strftime('%Y-%m-%d')
         self.fields['requested_date'].widget.attrs['min'] = today_str

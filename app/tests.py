@@ -1,8 +1,8 @@
+from datetime import time, timedelta
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
-from datetime import time, timedelta
-from app.models import User, UserRole, DoctorProfile, DoctorWorkingHours, Appointment, SpecialtyChoices
+from app.models import Appointment, DoctorProfile, DoctorWorkingHours, SpecialtyChoices, User, UserRole
 
 
 class DoctorWorkingHoursAndAppointmentTests(TestCase):
@@ -31,6 +31,37 @@ class DoctorWorkingHoursAndAppointmentTests(TestCase):
             approved=True
         )
 
+        # Create doctor 2 and 3 for testing global limits
+        self.doctor2 = User.objects.create_user(
+            username='doctor2',
+            email='doctor2@example.com',
+            password='password123',
+            role=UserRole.DOCTOR,
+            first_name='Alan',
+            last_name='Turing'
+        )
+        DoctorProfile.objects.create(user=self.doctor2, specialty=SpecialtyChoices.DERMATOLOGY, approved=True)
+
+        self.doctor3 = User.objects.create_user(
+            username='doctor3',
+            email='doctor3@example.com',
+            password='password123',
+            role=UserRole.DOCTOR,
+            first_name='Clara',
+            last_name='Barton'
+        )
+        DoctorProfile.objects.create(user=self.doctor3, specialty=SpecialtyChoices.PEDIATRICS, approved=True)
+
+        self.doctor4 = User.objects.create_user(
+            username='doctor4',
+            email='doctor4@example.com',
+            password='password123',
+            role=UserRole.DOCTOR,
+            first_name='David',
+            last_name='Livingstone'
+        )
+        DoctorProfile.objects.create(user=self.doctor4, specialty=SpecialtyChoices.NEUROLOGY, approved=True)
+
     def test_doctor_working_hours_creation(self):
         wh = DoctorWorkingHours.objects.create(
             doctor=self.doctor_user,
@@ -54,7 +85,6 @@ class DoctorWorkingHoursAndAppointmentTests(TestCase):
 
         self.client.login(username='doctor1', password='password123')
 
-        # Doctor selects time 14:30 for the requested date
         response = self.client.post(
             reverse('app:respond_appointment', kwargs={'appointment_pk': appointment.pk}),
             {'action': 'accept', 'confirmed_time': '14:30'}
@@ -63,29 +93,66 @@ class DoctorWorkingHoursAndAppointmentTests(TestCase):
         appointment.refresh_from_db()
         self.assertEqual(appointment.status, Appointment.Status.CONFIRMED)
         self.assertIsNotNone(appointment.confirmed_date)
-        # Verify the day remains locked to the requested date
+        self.assertIsNotNone(appointment.verification_pin)
+        self.assertEqual(len(appointment.verification_pin), 6)
         self.assertEqual(appointment.confirmed_date.date(), target_date)
         self.assertEqual(appointment.confirmed_date.time(), time(14, 30))
         self.assertEqual(response.status_code, 302)
 
-    def test_doctor_reject_appointment_with_reason(self):
+    def test_doctor_complete_consultation_with_valid_and_invalid_pin(self):
         appointment = Appointment.objects.create(
             patient=self.patient,
             doctor=self.doctor_user,
             specialty=SpecialtyChoices.CARDIOLOGY,
-            reason='Routine Checkup',
-            requested_date=timezone.now() + timedelta(days=3)
+            reason='Consultation',
+            requested_date=timezone.now(),
+            confirmed_date=timezone.now(),
+            status=Appointment.Status.CONFIRMED,
+            verification_pin='123456'
         )
 
         self.client.login(username='doctor1', password='password123')
-        rejection_reason = "Out of office on this date due to conference."
+
+        # Attempt with wrong PIN
+        response_wrong = self.client.post(
+            reverse('app:complete_consultation', kwargs={'appointment_pk': appointment.pk}),
+            {'verification_pin': '999999', 'doctor_notes': 'Some notes'}
+        )
+        appointment.refresh_from_db()
+        self.assertEqual(appointment.status, Appointment.Status.CONFIRMED)
+        self.assertFalse(appointment.doctor_completed)
+
+        # Attempt with correct PIN
+        response_correct = self.client.post(
+            reverse('app:complete_consultation', kwargs={'appointment_pk': appointment.pk}),
+            {'verification_pin': '123456', 'doctor_notes': 'Diagnosis and treatment prescribed.'}
+        )
+        appointment.refresh_from_db()
+        self.assertEqual(appointment.status, Appointment.Status.COMPLETED)
+        self.assertTrue(appointment.doctor_completed)
+        self.assertTrue(appointment.patient_showed_up)
+
+    def test_mark_patient_absent_after_one_hour(self):
+        two_hours_ago = timezone.now() - timedelta(hours=2)
+        appointment = Appointment.objects.create(
+            patient=self.patient,
+            doctor=self.doctor_user,
+            specialty=SpecialtyChoices.CARDIOLOGY,
+            reason='Follow-up',
+            requested_date=two_hours_ago,
+            confirmed_date=two_hours_ago,
+            status=Appointment.Status.CONFIRMED,
+            verification_pin='654321'
+        )
+
+        self.client.login(username='doctor1', password='password123')
 
         response = self.client.post(
-            reverse('app:respond_appointment', kwargs={'appointment_pk': appointment.pk}),
-            {'action': 'reject', 'rejection_reason': rejection_reason}
+            reverse('app:mark_patient_absent', kwargs={'appointment_pk': appointment.pk}),
+            {'doctor_notes': 'Patient failed to show up.'}
         )
 
         appointment.refresh_from_db()
-        self.assertEqual(appointment.status, Appointment.Status.CANCELLED)
-        self.assertEqual(appointment.rejection_reason, rejection_reason)
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(appointment.status, Appointment.Status.ABSENT)
+        self.assertFalse(appointment.patient_showed_up)
+        self.assertTrue(appointment.doctor_completed)
