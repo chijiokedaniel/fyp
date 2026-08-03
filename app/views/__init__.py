@@ -1,21 +1,29 @@
-from .site_views import (
+from app.views.auth_views import home, login_view, logout_view
+from app.views.doctor_views import (
     doctor_apply,
     doctor_appointments,
     doctor_dashboard,
+    doctor_onboarding,
+    doctor_pending_approval,
+    respond_appointment,
+)
+from app.views.patient_views import (
     doctor_list,
-    home,
-    login_view,
-    logout_view,
     patient_appointments,
     patient_dashboard,
+    patient_onboarding,
     patient_register,
     request_appointment,
 )
+from app.views.profile_views import edit_profile
 
 __all__ = [
     'home',
     'patient_register',
+    'patient_onboarding',
     'doctor_apply',
+    'doctor_onboarding',
+    'doctor_pending_approval',
     'login_view',
     'logout_view',
     'doctor_list',
@@ -24,4 +32,6 @@ __all__ = [
     'patient_appointments',
     'doctor_dashboard',
     'doctor_appointments',
+    'edit_profile',
+    'respond_appointment',
 ]

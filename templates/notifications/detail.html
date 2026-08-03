@@ -1,6 +1,6 @@
-{% extends 'app/base.html' %}
+{% extends 'app/base_authenticated.html' %}
 
-{% block title %}{{ notification.title }} — Notification Details{% endblock %}
+{% block title %}{{ notification.title }}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -68,7 +68,7 @@
 </style>
 {% endblock %}
 
-{% block main_content %}
+{% block authenticated_content %}
 <div class="detail-container">
     <a href="{% url 'notifications:list' %}" class="back-link">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
@@ -94,7 +94,7 @@
                 <h1 class="detail-title">{{ notification.title }}</h1>
                 <div class="detail-meta">
                     Received {{ notification.created_at|date:"F d, Y at H:i" }}
-                    {% if notification.actor %} &bull; From {{ notification.actor.get_full_name|default:notification.actor.username }}{% endif %}
+                    {% if notification.actor %} &bull; From {{ notification.actor.get_full_name|default:notification.actor.email }}{% endif %}
                 </div>
             </div>
         </div>

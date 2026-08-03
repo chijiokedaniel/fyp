@@ -1,5 +1,5 @@
 {% extends 'app/base_patient.html' %}
-{% block title %}Doctor Directory — Find a Specialist{% endblock %}
+{% block title %}Find Doctor{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -127,7 +127,7 @@
                             {% endif %}
                         </div>
                         <div>
-                            <h2 style="font-size: 1.1rem; font-weight: 700; color: #0f172a; margin: 0;">Dr. {{ doctor.get_full_name|default:doctor.username }}</h2>
+                            <h2 style="font-size: 1.1rem; font-weight: 700; color: #0f172a; margin: 0;">Dr. {{ doctor.get_full_name|default:doctor.email }}</h2>
                             <span class="specialty-badge">{{ doctor.doctor_profile.get_specialty_display }}</span>
                         </div>
                     </div>

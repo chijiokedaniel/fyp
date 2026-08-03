@@ -1,11 +1,13 @@
 from app.models import Appointment, UserRole
+from notifications.models.notification import Notification
 
 
 def appointment_counts(request):
-    """Context processor to add appointment counts to all templates."""
+    """Context processor to add appointment counts and unread notification count to all templates."""
     context = {
         'appointment_count': 0,
         'request_count': 0,
+        'unread_notifications_count': 0,
     }
     
     if request.user.is_authenticated:
@@ -18,5 +20,11 @@ def appointment_counts(request):
                 doctor=request.user,
                 status=Appointment.Status.REQUESTED
             ).count()
+        
+        context['unread_notifications_count'] = Notification.objects.filter(
+            recipient=request.user,
+            is_read=False
+        ).count()
     
     return context
+

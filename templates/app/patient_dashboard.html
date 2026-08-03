@@ -1,61 +1,57 @@
 {% extends 'app/base_patient.html' %}
 {% block title %}Patient Dashboard{% endblock %}
 {% block patient_content %}
-<h1>Welcome, {{ patient.first_name }}!</h1>
+<div class="card">
+    <h1>Welcome, {{ patient.first_name|default:patient.email }}!</h1>
 
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 24px 0;">
-    <div style="background: #f0f9ff; padding: 16px; border-radius: 8px; border-left: 4px solid #0ea5e9;">
-        <p style="font-size: 24px; font-weight: bold; margin: 0; color: #0369a1;">{{ pending_count }}</p>
-        <p style="margin: 4px 0 0 0; color: #475569;">Pending Appointments</p>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 24px 0;">
+        <div style="background: #f0f9ff; padding: 16px; border-radius: 8px; border-left: 4px solid #0ea5e9;">
+            <p style="font-size: 24px; font-weight: bold; margin: 0; color: #0369a1;">{{ pending_count }}</p>
+            <p style="margin: 4px 0 0 0; color: #475569;">Pending Appointments</p>
+        </div>
+        <div style="background: #f0fdf4; padding: 16px; border-radius: 8px; border-left: 4px solid #10b981;">
+            <p style="font-size: 24px; font-weight: bold; margin: 0; color: #047857;">{{ confirmed_count }}</p>
+            <p style="margin: 4px 0 0 0; color: #475569;">Confirmed Appointments</p>
+        </div>
     </div>
-    <div style="background: #f0fdf4; padding: 16px; border-radius: 8px; border-left: 4px solid #10b981;">
-        <p style="font-size: 24px; font-weight: bold; margin: 0; color: #047857;">{{ confirmed_count }}</p>
-        <p style="margin: 4px 0 0 0; color: #475569;">Confirmed Appointments</p>
-    </div>
-</div>
 
-<h2>Recent Appointments</h2>
-{% if appointments %}
-    <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
-        <thead>
-            <tr style="background: #f3f4f6; border-bottom: 2px solid #e5e7eb;">
-                <th style="padding: 12px; text-align: left;">Doctor</th>
-                <th style="padding: 12px; text-align: left;">Specialty</th>
-                <th style="padding: 12px; text-align: left;">Date & Time</th>
-                <th style="padding: 12px; text-align: left;">Status</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for appointment in appointments %}
-                <tr style="border-bottom: 1px solid #e5e7eb;">
-                    <td style="padding: 12px;">Dr. {{ appointment.doctor.get_full_name }}</td>
-                    <td style="padding: 12px;">{{ appointment.get_specialty_display }}</td>
-                    <td style="padding: 12px;">{{ appointment.requested_date|date:"M d, Y H:i" }}</td>
-                    <td style="padding: 12px;">
-                        {% if appointment.status == 'requested' %}
-                            <span style="background: #fef3c7; color: #92400e; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Pending</span>
-                        {% elif appointment.status == 'confirmed' %}
-                            <span style="background: #d1fae5; color: #065f46; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Confirmed</span>
-                        {% elif appointment.status == 'completed' %}
-                            <span style="background: #e0e7ff; color: #3730a3; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Completed</span>
-                        {% elif appointment.status == 'cancelled' %}
-                            <span style="background: #fee2e2; color: #7f1d1d; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Cancelled</span>
-                        {% endif %}
-                    </td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    <a href="{% url 'app:patient_appointments' %}" style="color: #2563eb; text-decoration: none; font-weight: 500;">View all appointments →</a>
-{% else %}
-    <p style="color: #6b7280; font-style: italic;">No appointments yet. <a href="{% url 'app:doctor_list' %}" style="color: #2563eb;">Browse doctors</a> to get started.</p>
-{% endif %}
-
-<h2 style="margin-top: 32px;">Profile Information</h2>
-<div style="background: #f9fafb; padding: 16px; border-radius: 8px; margin: 16px 0;">
-    <p><strong>Name:</strong> {{ patient.get_full_name }}</p>
-    <p><strong>Email:</strong> {{ patient.email }}</p>
-    <p><strong>Phone:</strong> {{ patient.phone|default:"Not provided" }}</p>
-    <p><strong>Address:</strong> {{ patient.address|default:"Not provided" }}</p>
+    <h2>Recent Appointments</h2>
+    {% if appointments %}
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+                <thead>
+                    <tr style="background: #f3f4f6; border-bottom: 2px solid #e5e7eb;">
+                        <th style="padding: 12px; text-align: left;">Doctor</th>
+                        <th style="padding: 12px; text-align: left;">Specialty</th>
+                        <th style="padding: 12px; text-align: left;">Date & Time</th>
+                        <th style="padding: 12px; text-align: left;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for appointment in appointments %}
+                        <tr style="border-bottom: 1px solid #e5e7eb;">
+                            <td style="padding: 12px;">Dr. {{ appointment.doctor.get_full_name|default:appointment.doctor.email }}</td>
+                            <td style="padding: 12px;">{{ appointment.get_specialty_display }}</td>
+                            <td style="padding: 12px;">{{ appointment.requested_date|date:"M d, Y H:i" }}</td>
+                            <td style="padding: 12px;">
+                                {% if appointment.status == 'requested' %}
+                                    <span style="background: #fef3c7; color: #92400e; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Pending</span>
+                                {% elif appointment.status == 'confirmed' %}
+                                    <span style="background: #d1fae5; color: #065f46; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Confirmed</span>
+                                {% elif appointment.status == 'completed' %}
+                                    <span style="background: #e0e7ff; color: #3730a3; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Completed</span>
+                                {% elif appointment.status == 'cancelled' %}
+                                    <span style="background: #fee2e2; color: #7f1d1d; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Cancelled</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <a href="{% url 'app:patient_appointments' %}" style="color: #2563eb; text-decoration: none; font-weight: 500;">View all appointments →</a>
+    {% else %}
+        <p style="color: #6b7280; font-style: italic;">No appointments yet. <a href="{% url 'app:doctor_list' %}" style="color: #2563eb;">Browse doctors</a> to get started.</p>
+    {% endif %}
 </div>
 {% endblock %}

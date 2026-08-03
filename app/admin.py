@@ -47,7 +47,7 @@ def approve_doctors(modeladmin, request, queryset):
 class DoctorProfileAdmin(admin.ModelAdmin):
     list_display = ('user', 'specialty', 'approved', 'applied_at')
     list_filter = ('approved', 'specialty')
-    search_fields = ('user__username', 'user__first_name', 'user__last_name')
+    search_fields = ('user__email', 'user__first_name', 'user__last_name')
     actions = [approve_doctors]
 
     def save_model(self, request, obj, form, change):
@@ -80,5 +80,5 @@ class DoctorProfileAdmin(admin.ModelAdmin):
 class AppointmentAdmin(admin.ModelAdmin):
     list_display = ('patient', 'doctor', 'specialty', 'requested_date', 'status', 'created_at')
     list_filter = ('status', 'specialty')
-    search_fields = ('patient__username', 'doctor__username', 'reason')
+    search_fields = ('patient__email', 'doctor__email', 'reason')
     readonly_fields = ('created_at',)

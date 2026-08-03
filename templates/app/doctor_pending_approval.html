@@ -1,6 +1,6 @@
 {% extends 'app/base.html' %}
 
-{% block title %}Application Pending Approval — Hospital Portal{% endblock %}
+{% block title %}Application Pending Approval{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -116,7 +116,7 @@
 
     <h1 class="waiting-title">Application Under Review</h1>
     <p class="waiting-description">
-        Thank you for completing your medical onboarding, <strong>Dr. {{ doctor.get_full_name|default:doctor.username }}</strong>.<br>
+        Thank you for completing your medical onboarding, <strong>Dr. {{ doctor.get_full_name|default:doctor.email }}</strong>.<br>
         Your credentials and profile are currently being reviewed by hospital administrators. Once approved, full access to your doctor portal will be activated.
     </p>
 
@@ -124,7 +124,7 @@
         <h3>Submitted Profile Details</h3>
         <div class="profile-row">
             <span class="profile-label">Doctor Name:</span>
-            <span class="profile-value">Dr. {{ doctor.get_full_name|default:doctor.username }}</span>
+            <span class="profile-value">Dr. {{ doctor.get_full_name|default:doctor.email }}</span>
         </div>
         <div class="profile-row">
             <span class="profile-label">Specialty:</span>

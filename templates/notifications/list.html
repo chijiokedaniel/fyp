@@ -1,6 +1,6 @@
-{% extends 'app/base.html' %}
+{% extends 'app/base_authenticated.html' %}
 
-{% block title %}Notifications — Hospital System{% endblock %}
+{% block title %}Notifications{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -146,7 +146,7 @@
 </style>
 {% endblock %}
 
-{% block main_content %}
+{% block authenticated_content %}
 <div class="notifications-container">
     <div class="notifications-header">
         <h1>
@@ -201,7 +201,7 @@
                         </div>
                         <div class="notification-footer">
                             {% if n.actor %}
-                                <span>From: <strong>{{ n.actor.get_full_name|default:n.actor.username }}</strong></span>
+                                <span>From: <strong>{{ n.actor.get_full_name|default:n.actor.email }}</strong></span>
                             {% else %}
                                 <span>System Alert</span>
                             {% endif %}

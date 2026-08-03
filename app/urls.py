@@ -12,6 +12,7 @@ from app.views.site_views import (
     logout_view,
     patient_appointments,
     patient_dashboard,
+    patient_onboarding,
     patient_register,
     request_appointment,
     edit_profile,
@@ -23,6 +24,7 @@ app_name = 'app'
 urlpatterns = [
     path('', home, name='home'),
     path('register/', patient_register, name='patient_register'),
+    path('patient/onboarding/', patient_onboarding, name='patient_onboarding'),
     path('doctor/apply/', doctor_apply, name='doctor_apply'),
     path('doctor/onboarding/', doctor_onboarding, name='doctor_onboarding'),
     path('doctor/pending-approval/', doctor_pending_approval, name='doctor_pending_approval'),

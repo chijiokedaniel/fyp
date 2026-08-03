@@ -23,12 +23,21 @@ class User(AbstractUser):
     role = models.CharField(max_length=20, choices=UserRole.choices, default=UserRole.PATIENT)
     phone = models.CharField(max_length=24, blank=True)
     address = models.TextField(blank=True)
+    profile_picture = models.ImageField(upload_to='patient_profiles/', blank=True, null=True)
 
     def is_patient(self):
         return self.role == UserRole.PATIENT
 
     def is_doctor(self):
         return self.role == UserRole.DOCTOR
+
+    @property
+    def get_avatar_url(self):
+        if hasattr(self, 'doctor_profile') and self.doctor_profile and self.doctor_profile.profile_picture:
+            return self.doctor_profile.profile_picture.url
+        if self.profile_picture:
+            return self.profile_picture.url
+        return None
 
 
 class DoctorProfile(models.Model):
