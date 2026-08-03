@@ -5,6 +5,7 @@ from app.views.doctor_views import (
     doctor_dashboard,
     doctor_onboarding,
     doctor_pending_approval,
+    doctor_working_hours,
     respond_appointment,
 )
 from app.views.patient_views import (
@@ -24,6 +25,7 @@ __all__ = [
     'doctor_apply',
     'doctor_onboarding',
     'doctor_pending_approval',
+    'doctor_working_hours',
     'login_view',
     'logout_view',
     'doctor_list',

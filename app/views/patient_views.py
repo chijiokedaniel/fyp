@@ -91,7 +91,7 @@ def request_appointment(request, doctor_pk):
             appointment.doctor = doctor
             appointment.save()
 
-            formatted_date = appointment.requested_date.strftime("%b %d, %Y at %I:%M %p")
+            formatted_date = appointment.requested_date.strftime("%b %d, %Y")
             patient_name = request.user.get_full_name() or request.user.email
             doctor_name = doctor.get_full_name() or doctor.email
 
@@ -109,13 +109,13 @@ def request_appointment(request, doctor_pk):
                 recipient=request.user,
                 actor=None,
                 title="Appointment Request Submitted",
-                message=f"Your appointment request with Dr. {doctor_name} for {formatted_date} has been submitted.",
+                message=f"Your appointment request with Dr. {doctor_name} for {formatted_date} has been submitted. Dr. {doctor_name} will set the confirmed appointment time based on their available schedule.",
                 target_obj=appointment,
                 category="appointment_request",
                 type="success"
             )
 
-            messages.success(request, 'Appointment request submitted. The doctor or admin will review it.')
+            messages.success(request, f'Appointment request submitted for {formatted_date}. Dr. {doctor_name} will review and assign the confirmed time.')
             return redirect('app:doctor_list')
     else:
         form = AppointmentRequestForm(initial={'specialty': doctor.doctor_profile.specialty})

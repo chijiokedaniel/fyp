@@ -2,11 +2,13 @@ from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+from datetime import datetime
 
 from app.decorators import doctor_required
 from app.forms.auth_forms import DoctorApplicationForm
 from app.forms.profile_forms import DoctorOnboardingForm
-from app.models import Appointment, UserRole
+from app.models import Appointment, DayOfWeek, DoctorWorkingHours, UserRole
 from notifications.notification_services import NotificationService
 
 
@@ -119,49 +121,129 @@ def doctor_appointments(request):
     if status_filter and status_filter in [choice[0] for choice in Appointment.Status.choices]:
         appointments = appointments.filter(status=status_filter)
 
+    working_hours = request.user.get_working_hours_list()
+
     context = {
         'appointments': appointments,
         'statuses': Appointment.Status.choices,
         'selected_status': status_filter,
+        'working_hours': working_hours,
     }
     return render(request, 'app/doctor_appointments.html', context)
 
 
 @doctor_required
 def respond_appointment(request, appointment_pk):
-    """Doctor accepts/rejects an appointment request."""
+    """Doctor accepts (assigning time) or rejects (with reason modal) an appointment request."""
     appointment = get_object_or_404(Appointment, pk=appointment_pk, doctor=request.user)
     if request.method == 'POST':
         action = request.POST.get('action')
-        formatted_date = appointment.requested_date.strftime("%b %d, %Y at %I:%M %p")
         doctor_name = request.user.get_full_name() or request.user.email
 
         if action == 'accept':
+            confirmed_time_raw = request.POST.get('confirmed_time', '').strip()
+            confirmed_date_raw = request.POST.get('confirmed_date', '').strip()
+
+            base_date = appointment.requested_date.date()
+            time_obj = None
+
+            if confirmed_time_raw:
+                for fmt in ['%H:%M', '%I:%M %p', '%H:%M:%S', '%I:%M%p']:
+                    try:
+                        time_obj = datetime.strptime(confirmed_time_raw, fmt).time()
+                        break
+                    except ValueError:
+                        pass
+
+            if not time_obj and confirmed_date_raw:
+                for fmt in ['%Y-%m-%d %H:%M', '%Y-%m-%dT%H:%M', '%Y-%m-%d %H:%M:%S', '%H:%M']:
+                    try:
+                        parsed = datetime.strptime(confirmed_date_raw, fmt)
+                        time_obj = parsed.time()
+                        break
+                    except ValueError:
+                        pass
+
+            # Default to 09:00 AM if no time parsed
+            if not time_obj:
+                time_obj = datetime.strptime('09:00', '%H:%M').time()
+
+            naive_dt = datetime.combine(base_date, time_obj)
+            confirmed_dt = timezone.make_aware(naive_dt) if timezone.is_naive(naive_dt) else naive_dt
+
+            appointment.confirmed_date = confirmed_dt
             appointment.status = Appointment.Status.CONFIRMED
             appointment.save()
-            messages.success(request, 'Appointment confirmed.')
+
+            formatted_date = confirmed_dt.strftime("%b %d, %Y at %I:%M %p")
+            messages.success(request, f'Appointment confirmed for {formatted_date}.')
 
             NotificationService.send_notification(
                 recipient=appointment.patient,
                 actor=request.user,
-                title="Appointment Confirmed",
-                message=f"Dr. {doctor_name} confirmed your appointment request for {formatted_date}.",
+                title="Appointment Confirmed 🗓️",
+                message=f"Dr. {doctor_name} confirmed your appointment for {formatted_date}.",
                 target_obj=appointment,
                 category="appointment_response",
                 type="success"
             )
         elif action == 'reject':
+            rejection_reason = request.POST.get('rejection_reason', '').strip()
+            appointment.rejection_reason = rejection_reason
             appointment.status = Appointment.Status.CANCELLED
             appointment.save()
-            messages.info(request, 'Appointment rejected.')
 
+            messages.info(request, 'Appointment request has been rejected.')
+
+            reason_str = f" Reason: {rejection_reason}" if rejection_reason else ""
             NotificationService.send_notification(
                 recipient=appointment.patient,
                 actor=request.user,
-                title="Appointment Declined",
-                message=f"Dr. {doctor_name} declined your appointment request for {formatted_date}.",
+                title="Appointment Declined ❌",
+                message=f"Dr. {doctor_name} declined your appointment request.{reason_str}",
                 target_obj=appointment,
                 category="appointment_response",
                 type="warning"
             )
+
     return redirect('app:doctor_appointments')
+
+
+@doctor_required
+def doctor_working_hours(request):
+    """Doctor view and manage weekly working hours schedule."""
+    existing_hours = {wh.day: wh for wh in DoctorWorkingHours.objects.filter(doctor=request.user)}
+
+    if request.method == 'POST':
+        for day_code, day_name in DayOfWeek.choices:
+            is_available = request.POST.get(f'available_{day_code}') == 'on'
+            start_time = request.POST.get(f'start_time_{day_code}', '09:00')
+            end_time = request.POST.get(f'end_time_{day_code}', '17:00')
+
+            wh, created = DoctorWorkingHours.objects.get_or_create(
+                doctor=request.user,
+                day=day_code,
+                defaults={'start_time': start_time, 'end_time': end_time, 'is_available': is_available}
+            )
+            if not created:
+                wh.start_time = start_time
+                wh.end_time = end_time
+                wh.is_available = is_available
+                wh.save()
+
+        messages.success(request, 'Your working hours have been updated successfully!')
+        return redirect('app:doctor_working_hours')
+
+    days_data = []
+    for day_code, day_name in DayOfWeek.choices:
+        wh = existing_hours.get(day_code)
+        days_data.append({
+            'day_code': day_code,
+            'day_name': day_name,
+            'is_available': wh.is_available if wh else (day_code < 5),  # default Mon-Fri available
+            'start_time': wh.start_time.strftime('%H:%M') if wh else '09:00',
+            'end_time': wh.end_time.strftime('%H:%M') if wh else '17:00',
+        })
+
+    return render(request, 'app/doctor_working_hours.html', {'days_data': days_data})
+

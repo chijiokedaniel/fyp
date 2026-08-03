@@ -1,10 +1,13 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 
-from app.models import Appointment, DoctorProfile, User
-
-
+from app.models import Appointment, DoctorProfile, DoctorWorkingHours, User
 from notifications.notification_services import NotificationService
+
+
+class DoctorWorkingHoursInline(admin.TabularInline):
+    model = DoctorWorkingHours
+    extra = 0
 
 
 class DoctorProfileInline(admin.StackedInline):
@@ -20,7 +23,7 @@ class UserAdmin(DjangoUserAdmin):
     fieldsets = DjangoUserAdmin.fieldsets + (
         ('Hospital Profile', {'fields': ('role', 'phone', 'address')}),
     )
-    inlines = [DoctorProfileInline]
+    inlines = [DoctorProfileInline, DoctorWorkingHoursInline]
 
 
 @admin.action(description="Approve selected doctor applications")
@@ -50,35 +53,17 @@ class DoctorProfileAdmin(admin.ModelAdmin):
     search_fields = ('user__email', 'user__first_name', 'user__last_name')
     actions = [approve_doctors]
 
-    def save_model(self, request, obj, form, change):
-        if change:
-            orig = DoctorProfile.objects.get(pk=obj.pk)
-            if not orig.approved and obj.approved:
-                NotificationService.send_notification(
-                    recipient=obj.user,
-                    actor=request.user,
-                    title="Doctor Profile Approved 🎉",
-                    message="Congratulations! Your doctor profile has been verified and approved by hospital administration. You can now receive patient appointments.",
-                    target_obj=obj,
-                    category="approval",
-                    type="success"
-                )
-        elif obj.approved:
-            NotificationService.send_notification(
-                recipient=obj.user,
-                actor=request.user,
-                title="Doctor Profile Approved 🎉",
-                message="Congratulations! Your doctor profile has been verified and approved by hospital administration. You can now receive patient appointments.",
-                target_obj=obj,
-                category="approval",
-                type="success"
-            )
-        super().save_model(request, obj, form, change)
+
+@admin.register(DoctorWorkingHours)
+class DoctorWorkingHoursAdmin(admin.ModelAdmin):
+    list_display = ('doctor', 'day', 'start_time', 'end_time', 'is_available')
+    list_filter = ('day', 'is_available')
+    search_fields = ('doctor__email', 'doctor__first_name', 'doctor__last_name')
 
 
 @admin.register(Appointment)
 class AppointmentAdmin(admin.ModelAdmin):
-    list_display = ('patient', 'doctor', 'specialty', 'requested_date', 'status', 'created_at')
+    list_display = ('patient', 'doctor', 'specialty', 'requested_date', 'confirmed_date', 'status', 'created_at')
     list_filter = ('status', 'specialty')
     search_fields = ('patient__email', 'doctor__email', 'reason')
     readonly_fields = ('created_at',)

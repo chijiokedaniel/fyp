@@ -135,6 +135,26 @@
                     <p style="font-size: 13px; color: #64748b; line-height: 1.5; margin: 8px 0;">
                         {{ doctor.doctor_profile.bio|default:"Experienced medical specialist providing patient-centered care."|truncatewords:20 }}
                     </p>
+
+                    <!-- Doctor Working Hours Badge List -->
+                    <div style="margin-top: 12px; padding: 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+                        <span style="display: block; font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 6px;">
+                            Working Hours:
+                        </span>
+                        {% with wh_list=doctor.get_working_hours_list %}
+                            {% if wh_list %}
+                                <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                                    {% for wh in wh_list %}
+                                        <span style="font-size: 11px; font-weight: 600; background: #e0f2fe; color: #0369a1; padding: 2px 6px; border-radius: 4px;">
+                                            {{ wh.get_day_display|slice:":3" }}: {{ wh.start_time|time:"g:iA" }}-{{ wh.end_time|time:"g:iA" }}
+                                        </span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <span style="font-size: 12px; color: #64748b; font-style: italic;">Mon – Fri: 9:00 AM – 5:00 PM</span>
+                            {% endif %}
+                        {% endwith %}
+                    </div>
                 </div>
 
                 <div>

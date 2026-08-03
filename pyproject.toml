@@ -17,3 +17,4 @@ dependencies = [
     "psycopg[binary]>=3.3.4",
     "gunicorn>=26.0.0",
 ]
+    

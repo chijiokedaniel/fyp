@@ -7,6 +7,7 @@ from app.views.site_views import (
     doctor_list,
     doctor_onboarding,
     doctor_pending_approval,
+    doctor_working_hours,
     home,
     login_view,
     logout_view,
@@ -42,4 +43,5 @@ urlpatterns = [
     # Doctor URLs
     path('doctor/dashboard/', doctor_dashboard, name='doctor_dashboard'),
     path('doctor/appointments/', doctor_appointments, name='doctor_appointments'),
+    path('doctor/working-hours/', doctor_working_hours, name='doctor_working_hours'),
 ]

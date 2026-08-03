@@ -47,12 +47,9 @@
               <td style="padding: 12px;">{{ appointment.patient.get_full_name|default:appointment.patient.email }}</td>
               <td style="padding: 12px;">{{ appointment.get_specialty_display }}</td>
               <td style="padding: 12px;">{{ appointment.reason }}</td>
-              <td style="padding: 12px;">{{ appointment.requested_date|date:"M d, Y H:i" }}</td>
+              <td style="padding: 12px;">{{ appointment.requested_date|date:"l, F j, Y" }}</td>
               <td style="padding: 12px;">
-                <a href="{% url 'app:respond_appointment' appointment.pk %}" style="background: #2563eb; color: #ffffff; font-size: 12px; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                  View
-                </a>
+                {% include 'app/includes/appointment_action_form.html' with appointment=appointment %}
               </td>
             </tr>
             {% endfor %}
