@@ -1,6 +1,9 @@
+from datetime import datetime, timedelta
+
 from django import forms
 from django.utils import timezone
 from app.models import Appointment, DoctorWorkingHours, SpecialtyChoices, DayOfWeek
+from app.utils.appointment_slots import is_slot_available, get_working_window
 
 
 class AppointmentRequestForm(forms.ModelForm):
@@ -14,6 +17,10 @@ class AppointmentRequestForm(forms.ModelForm):
             }
         ),
         input_formats=['%Y-%m-%d']
+    )
+    requested_time = forms.TimeField(
+        label='Preferred appointment time',
+        widget=forms.HiddenInput(),
     )
 
     class Meta:
@@ -42,6 +49,7 @@ class AppointmentRequestForm(forms.ModelForm):
     def __init__(self, *args, doctor=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['specialty'].choices = SpecialtyChoices.choices
+        self.doctor = doctor
 
         if doctor and hasattr(doctor, 'doctor_profile') and doctor.doctor_profile:
             self.fields['specialty'].initial = doctor.doctor_profile.specialty
@@ -63,13 +71,41 @@ class AppointmentRequestForm(forms.ModelForm):
             raise forms.ValidationError("You cannot select a date in the past.")
         return date_val
 
+    def clean(self):
+        cleaned_data = super().clean()
+        requested_date = cleaned_data.get('requested_date')
+        requested_time = cleaned_data.get('requested_time')
+
+        if not requested_date or not requested_time:
+            return cleaned_data
+
+        requested_dt = timezone.make_aware(datetime.combine(requested_date, requested_time))
+        if requested_dt < timezone.now():
+            raise forms.ValidationError('Please choose a future appointment slot.')
+
+        if self.doctor:
+            working_window = get_working_window(self.doctor, requested_date)
+            if not working_window:
+                raise forms.ValidationError('The selected date is outside this doctor’s working hours.')
+
+            start_time, end_time = working_window
+            slot_start = timezone.make_aware(datetime.combine(requested_date, start_time))
+            slot_end = timezone.make_aware(datetime.combine(requested_date, end_time))
+            if requested_dt < slot_start or requested_dt + timedelta(minutes=30) > slot_end:
+                raise forms.ValidationError('The selected time is outside this doctor’s working hours.')
+
+            if not is_slot_available(self.doctor, requested_dt):
+                raise forms.ValidationError('That time slot has already been booked. Please choose another available slot.')
+
+        return cleaned_data
+
     def save(self, commit=True):
         instance = super().save(commit=False)
         date_val = self.cleaned_data.get('requested_date')
-        if date_val:
-            # Convert date to datetime at midnight (00:00:00)
-            naive_dt = timezone.datetime.combine(date_val, timezone.datetime.min.time())
-            instance.requested_date = timezone.make_aware(naive_dt) if timezone.is_naive(naive_dt) else naive_dt
+        time_val = self.cleaned_data.get('requested_time')
+        if date_val and time_val:
+            requested_dt = timezone.make_aware(datetime.combine(date_val, time_val))
+            instance.requested_date = requested_dt
         if commit:
             instance.save()
         return instance

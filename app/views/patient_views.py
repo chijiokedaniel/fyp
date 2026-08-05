@@ -1,7 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
-from django.db import models
+from django.db import IntegrityError, models
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
@@ -10,6 +10,7 @@ from app.forms.auth_forms import PatientRegistrationForm
 from app.forms.doctor_forms import AppointmentRequestForm
 from app.forms.profile_forms import PatientOnboardingForm
 from app.models import Appointment, SpecialtyChoices, User, UserRole
+from app.utils.appointment_slots import build_schedule_map
 from notifications.notification_services import NotificationService
 
 
@@ -150,9 +151,14 @@ def request_appointment(request, doctor_pk):
             appointment.patient = request.user
             appointment.doctor = doctor
             appointment.specialty = doctor.doctor_profile.specialty
-            appointment.save()
+            try:
+                appointment.save()
+            except IntegrityError:
+                form.add_error('requested_time', 'That time slot was just booked. Please choose another available slot.')
+                schedule_map = build_schedule_map(doctor, timezone.now().date(), days_ahead=14)
+                return render(request, 'app/appointment_request.html', {'form': form, 'doctor': doctor, 'schedule_json': schedule_map})
 
-            formatted_date = appointment.requested_date.strftime("%b %d, %Y")
+            formatted_date = appointment.requested_date.strftime("%b %d, %Y at %I:%M %p")
             patient_name = request.user.get_full_name() or request.user.email
             doctor_name = doctor.get_full_name() or doctor.email
 
@@ -170,18 +176,24 @@ def request_appointment(request, doctor_pk):
                 recipient=request.user,
                 actor=None,
                 title="Appointment Request Submitted",
-                message=f"Your appointment request with Dr. {doctor_name} for {formatted_date} has been submitted. Dr. {doctor_name} will set the confirmed appointment time based on their available schedule.",
+                message=f"Your appointment request with Dr. {doctor_name} for {formatted_date} has been submitted. Dr. {doctor_name} will review and confirm this selected slot.",
                 target_obj=appointment,
                 category="appointment_request",
                 type="success"
             )
 
-            messages.success(request, f'Appointment request submitted for {formatted_date}. Dr. {doctor_name} will review and assign the confirmed time.')
+            messages.success(request, f'Appointment request submitted for {formatted_date}. Dr. {doctor_name} will review and confirm the selected slot.')
             return redirect('app:doctor_list')
     else:
         form = AppointmentRequestForm(doctor=doctor)
 
-    return render(request, 'app/appointment_request.html', {'form': form, 'doctor': doctor})
+    schedule_map = build_schedule_map(doctor, timezone.now().date(), days_ahead=14)
+    context = {
+        'form': form,
+        'doctor': doctor,
+        'schedule_json': schedule_map,
+    }
+    return render(request, 'app/appointment_request.html', context)
 
 
 @patient_required

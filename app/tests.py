@@ -16,6 +16,15 @@ class DoctorWorkingHoursAndAppointmentTests(TestCase):
             last_name='Doe'
         )
 
+        self.patient2 = User.objects.create_user(
+            username='patient2',
+            email='patient2@example.com',
+            password='password123',
+            role=UserRole.PATIENT,
+            first_name='Mary',
+            last_name='Jones'
+        )
+
         self.doctor_user = User.objects.create_user(
             username='doctor1',
             email='doctor1@example.com',
@@ -75,19 +84,20 @@ class DoctorWorkingHoursAndAppointmentTests(TestCase):
 
     def test_doctor_accept_appointment_locks_day_and_sets_time(self):
         target_date = (timezone.now() + timedelta(days=2)).date()
+        selected_time = time(14, 30)
         appointment = Appointment.objects.create(
             patient=self.patient,
             doctor=self.doctor_user,
             specialty=SpecialtyChoices.CARDIOLOGY,
             reason='Chest discomfort',
-            requested_date=timezone.make_aware(timezone.datetime.combine(target_date, time(0, 0)))
+            requested_date=timezone.make_aware(timezone.datetime.combine(target_date, selected_time))
         )
 
         self.client.login(username='doctor1', password='password123')
 
         response = self.client.post(
             reverse('app:respond_appointment', kwargs={'appointment_pk': appointment.pk}),
-            {'action': 'accept', 'confirmed_time': '14:30'}
+            {'action': 'accept'}
         )
 
         appointment.refresh_from_db()
@@ -96,8 +106,35 @@ class DoctorWorkingHoursAndAppointmentTests(TestCase):
         self.assertIsNotNone(appointment.verification_pin)
         self.assertEqual(len(appointment.verification_pin), 6)
         self.assertEqual(appointment.confirmed_date.date(), target_date)
-        self.assertEqual(appointment.confirmed_date.time(), time(14, 30))
+        self.assertEqual(appointment.confirmed_date.time(), selected_time)
         self.assertEqual(response.status_code, 302)
+
+    def test_patient_cannot_book_taken_time_slot(self):
+        target_date = (timezone.now() + timedelta(days=3)).date()
+        slot_dt = timezone.make_aware(timezone.datetime.combine(target_date, time(10, 0)))
+
+        Appointment.objects.create(
+            patient=self.patient,
+            doctor=self.doctor_user,
+            specialty=SpecialtyChoices.CARDIOLOGY,
+            reason='Initial booking',
+            requested_date=slot_dt,
+        )
+
+        self.client.login(username='patient2', password='password123')
+        response = self.client.post(
+            reverse('app:request_appointment', kwargs={'doctor_pk': self.doctor_user.pk}),
+            {
+                'requested_date': target_date.strftime('%Y-%m-%d'),
+                'requested_time': '10:00',
+                'specialty': SpecialtyChoices.CARDIOLOGY,
+                'reason': 'Second booking attempt',
+                'notes': '',
+            }
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Appointment.objects.filter(doctor=self.doctor_user, requested_date=slot_dt).count(), 1)
 
     def test_doctor_complete_consultation_with_valid_and_invalid_pin(self):
         appointment = Appointment.objects.create(

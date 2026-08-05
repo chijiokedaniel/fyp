@@ -41,10 +41,10 @@
                             <td style="padding: 12px; font-weight: 600; color: #0f172a;">Dr. {{ appointment.doctor.get_full_name|default:appointment.doctor.email }}</td>
                             <td style="padding: 12px; color: #334155;">{{ appointment.get_specialty_display }}</td>
                             <td style="padding: 12px;">
-                                {% if appointment.confirmed_date %}
-                                    <strong style="color: #047857;">{{ appointment.confirmed_date|date:"l, F j, Y" }} at {{ appointment.confirmed_date|date:"g:i A" }}</strong> (Confirmed)
+                                    {% if appointment.confirmed_date %}
+                                    <strong style="color: #047857;">{{ appointment.confirmed_date|date:"l, F j, Y g:i A" }}</strong> (Confirmed)
                                 {% else %}
-                                    {{ appointment.requested_date|date:"l, F j, Y" }} (Requested)
+                                    {{ appointment.requested_date|date:"l, F j, Y g:i A" }} (Requested)
                                 {% endif %}
                             </td>
                             <td style="padding: 12px;">

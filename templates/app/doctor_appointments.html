@@ -5,7 +5,7 @@
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
         <div>
             <h1 style="font-size: 22px; font-weight: 700; color: #0f172a; margin: 0;">Appointments &amp; Requests</h1>
-            <p style="color: #64748b; font-size: 13.5px; margin-top: 4px;">Review requests, schedule appointment times, and manage patient visits.</p>
+            <p style="color: #64748b; font-size: 13.5px; margin-top: 4px;">Review requests, confirm patient-selected appointment times, and manage patient visits.</p>
         </div>
         <a href="{% url 'app:doctor_working_hours' %}" style="background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -65,12 +65,12 @@
                             </td>
                             <td style="padding: 12px; color: #334155;">{{ appointment.reason }}</td>
                             <td style="padding: 12px; color: #475569; white-space: nowrap;">
-                                {{ appointment.requested_date|date:"l, F j, Y" }}
+                                {{ appointment.requested_date|date:"l, F j, Y g:i A" }}
                             </td>
                             <td style="padding: 12px; white-space: nowrap;">
                                 {% if appointment.confirmed_date %}
                                     <span style="color: #059669; font-weight: 600; background: #ecfdf5; padding: 4px 8px; border-radius: 6px; border: 1px solid #a7f3d0; display: inline-block;">
-                                        {{ appointment.confirmed_date|date:"l, F j, Y" }} at {{ appointment.confirmed_date|date:"g:i A" }}
+                                        {{ appointment.confirmed_date|date:"l, F j, Y g:i A" }}
                                     </span>
                                 {% else %}
                                     <span style="color: #94a3b8; font-style: italic;">Not scheduled yet</span>

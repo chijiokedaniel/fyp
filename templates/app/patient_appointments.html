@@ -5,7 +5,7 @@
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <div>
             <h1 style="font-size: 22px; font-weight: 700; color: #0f172a; margin: 0;">My Appointments</h1>
-            <p style="color: #64748b; font-size: 13.5px; margin-top: 4px;">Track your booking requests, doctor-assigned appointment times, and visit history.</p>
+            <p style="color: #64748b; font-size: 13.5px; margin-top: 4px;">Track your booking requests, selected appointment times, and visit history.</p>
         </div>
         <a href="{% url 'app:doctor_list' %}" style="background: #059669; color: #ffffff; padding: 8px 16px; border-radius: 8px; font-size: 13.5px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -38,13 +38,13 @@
                             </td>
                             <td style="padding: 12px; color: #334155;">{{ appointment.reason }}</td>
                             <td style="padding: 12px; color: #475569; white-space: nowrap;">
-                                {{ appointment.requested_date|date:"l, F j, Y" }}
+                                {{ appointment.requested_date|date:"l, F j, Y g:i A" }}
                             </td>
                             <td style="padding: 12px; white-space: nowrap;">
                                 {% if appointment.status == 'confirmed' and appointment.confirmed_date %}
                                     <div style="background: #ecfdf5; border: 1px solid #a7f3d0; color: #047857; font-weight: 700; padding: 6px 10px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                                        {{ appointment.confirmed_date|date:"l, F j, Y" }} at {{ appointment.confirmed_date|date:"g:i A" }}
+                                        {{ appointment.confirmed_date|date:"l, F j, Y g:i A" }}
                                     </div>
                                     {% if appointment.verification_pin %}
                                         <div style="font-size: 11.5px; color: #047857; font-weight: 700; margin-top: 4px;">

@@ -134,48 +134,19 @@ def doctor_appointments(request):
 
 @doctor_required
 def respond_appointment(request, appointment_pk):
-    """Doctor accepts (assigning time) or rejects (with reason modal) an appointment request."""
+    """Doctor confirms a patient-selected slot or rejects the appointment request."""
     appointment = get_object_or_404(Appointment, pk=appointment_pk, doctor=request.user)
     if request.method == 'POST':
         action = request.POST.get('action')
         doctor_name = request.user.get_full_name() or request.user.email
 
         if action == 'accept':
-            confirmed_time_raw = request.POST.get('confirmed_time', '').strip()
-            confirmed_date_raw = request.POST.get('confirmed_date', '').strip()
-
-            base_date = appointment.requested_date.date()
-            time_obj = None
-
-            if confirmed_time_raw:
-                for fmt in ['%H:%M', '%I:%M %p', '%H:%M:%S', '%I:%M%p']:
-                    try:
-                        time_obj = datetime.strptime(confirmed_time_raw, fmt).time()
-                        break
-                    except ValueError:
-                        pass
-
-            if not time_obj and confirmed_date_raw:
-                for fmt in ['%Y-%m-%d %H:%M', '%Y-%m-%dT%H:%M', '%Y-%m-%d %H:%M:%S', '%H:%M']:
-                    try:
-                        parsed = datetime.strptime(confirmed_date_raw, fmt)
-                        time_obj = parsed.time()
-                        break
-                    except ValueError:
-                        pass
-
-            if not time_obj:
-                time_obj = datetime.strptime('09:00', '%H:%M').time()
-
-            naive_dt = datetime.combine(base_date, time_obj)
-            confirmed_dt = timezone.make_aware(naive_dt) if timezone.is_naive(naive_dt) else naive_dt
-
-            appointment.confirmed_date = confirmed_dt
             appointment.status = Appointment.Status.CONFIRMED
             appointment.generate_verification_pin()
             appointment.save()
 
-            formatted_date = confirmed_dt.strftime("%b %d, %Y at %I:%M %p")
+            confirmed_dt = appointment.confirmed_date or appointment.requested_date
+            formatted_date = confirmed_dt.strftime("%b %d, %Y at %I:%M %p") if confirmed_dt else ''
             messages.success(request, f'Appointment confirmed for {formatted_date}. Consultation Verification PIN: {appointment.verification_pin}')
 
             NotificationService.send_notification(

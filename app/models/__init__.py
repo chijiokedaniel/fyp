@@ -1,6 +1,7 @@
 import random
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.db.models import Q
 from django.utils import timezone
 
 
@@ -119,15 +120,30 @@ class Appointment(models.Model):
     feedback_submitted_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['doctor', 'requested_date'],
+                condition=Q(status__in=['requested', 'confirmed']),
+                name='unique_active_appointment_slot_per_doctor',
+            )
+        ]
+
     def generate_verification_pin(self):
         if not self.verification_pin:
             self.verification_pin = f"{random.randint(100000, 999999)}"
 
+    def get_scheduled_datetime(self):
+        return self.confirmed_date or self.requested_date
+
     def save(self, *args, **kwargs):
         if self.status == self.Status.CONFIRMED and not self.verification_pin:
             self.generate_verification_pin()
+        if self.status == self.Status.CONFIRMED and not self.confirmed_date:
+            self.confirmed_date = self.requested_date
         super().save(*args, **kwargs)
 
     def __str__(self):
-        date_str = self.confirmed_date.strftime('%Y-%m-%d %H:%M') if self.confirmed_date else self.requested_date.strftime('%Y-%m-%d %H:%M')
+        date_value = self.get_scheduled_datetime()
+        date_str = date_value.strftime('%Y-%m-%d %H:%M') if date_value else ''
         return f'Appointment for {self.patient.get_full_name()} with Dr. {self.doctor.get_full_name()} on {date_str}'
