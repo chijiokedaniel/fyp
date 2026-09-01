@@ -193,3 +193,59 @@ class DoctorWorkingHoursAndAppointmentTests(TestCase):
         self.assertEqual(appointment.status, Appointment.Status.ABSENT)
         self.assertFalse(appointment.patient_showed_up)
         self.assertTrue(appointment.doctor_completed)
+
+
+class AdminWorkflowTests(TestCase):
+    def setUp(self):
+        self.admin_user = User.objects.create_superuser(
+            username='admin@example.com',
+            email='admin@example.com',
+            password='password123',
+            first_name='Super',
+            last_name='Admin',
+            role=UserRole.ADMIN
+        )
+
+    def test_super_admin_panel_access(self):
+        self.client.login(username='admin@example.com', password='password123')
+        response = self.client.get('/admin-panel/')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Dominion Super Admin Panel")
+
+    def test_basic_admin_dashboard_access(self):
+        self.client.login(username='admin@example.com', password='password123')
+        response = self.client.get(reverse('app:admin_dashboard'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Basic Hospital Admin Portal")
+
+    def test_admin_create_doctor(self):
+        self.client.login(username='admin@example.com', password='password123')
+        response = self.client.post(reverse('app:admin_create_doctor'), {
+            'first_name': 'Gregory',
+            'last_name': 'House',
+            'email': 'dr.house@hospital.com',
+            'phone': '1234567890',
+            'specialty': SpecialtyChoices.GENERAL,
+            'bio': 'Diagnostician',
+            'password': 'password123',
+            'auto_approve': 'on',
+        })
+        self.assertEqual(response.status_code, 302)
+        created_doctor = User.objects.get(email='dr.house@hospital.com')
+        self.assertEqual(created_doctor.role, UserRole.DOCTOR)
+        self.assertTrue(created_doctor.doctor_profile.approved)
+
+    def test_admin_create_patient(self):
+        self.client.login(username='admin@example.com', password='password123')
+        response = self.client.post(reverse('app:admin_create_patient'), {
+            'first_name': 'Alice',
+            'last_name': 'Wonder',
+            'email': 'alice@example.com',
+            'phone': '9876543210',
+            'address': 'Wonderland',
+            'password': 'password123',
+        })
+        self.assertEqual(response.status_code, 302)
+        created_patient = User.objects.get(email='alice@example.com')
+        self.assertEqual(created_patient.role, UserRole.PATIENT)
+

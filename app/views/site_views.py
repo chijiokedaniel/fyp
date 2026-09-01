@@ -4,19 +4,29 @@ Legacy site_views facade re-exporting modularized views from:
 - patient_views
 - doctor_views
 - profile_views
+- admin_views
 """
 
+from app.views.admin_views import (
+    admin_approve_doctor,
+    admin_create_doctor,
+    admin_create_patient,
+    admin_dashboard,
+    admin_doctors,
+    admin_patients,
+    admin_reject_doctor,
+)
 from app.views.auth_views import home, login_view, logout_view
 from app.views.doctor_views import (
+    complete_consultation,
     doctor_apply,
     doctor_appointments,
     doctor_dashboard,
     doctor_onboarding,
     doctor_pending_approval,
     doctor_working_hours,
-    respond_appointment,
-    complete_consultation,
     mark_patient_absent,
+    respond_appointment,
 )
 from app.views.patient_views import (
     doctor_list,
@@ -50,4 +60,11 @@ __all__ = [
     'submit_appointment_feedback',
     'complete_consultation',
     'mark_patient_absent',
+    'admin_dashboard',
+    'admin_doctors',
+    'admin_approve_doctor',
+    'admin_reject_doctor',
+    'admin_create_doctor',
+    'admin_patients',
+    'admin_create_patient',
 ]

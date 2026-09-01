@@ -1,6 +1,14 @@
 from django.urls import path
 
 from app.views.site_views import (
+    admin_approve_doctor,
+    admin_create_doctor,
+    admin_create_patient,
+    admin_dashboard,
+    admin_doctors,
+    admin_patients,
+    admin_reject_doctor,
+    complete_consultation,
     doctor_apply,
     doctor_appointments,
     doctor_dashboard,
@@ -8,19 +16,18 @@ from app.views.site_views import (
     doctor_onboarding,
     doctor_pending_approval,
     doctor_working_hours,
+    edit_profile,
     home,
     login_view,
     logout_view,
+    mark_patient_absent,
     patient_appointments,
     patient_dashboard,
     patient_onboarding,
     patient_register,
     request_appointment,
-    edit_profile,
     respond_appointment,
     submit_appointment_feedback,
-    complete_consultation,
-    mark_patient_absent,
 )
 
 app_name = 'app'
@@ -50,4 +57,13 @@ urlpatterns = [
     path('doctor/working-hours/', doctor_working_hours, name='doctor_working_hours'),
     path('doctor/appointment/<int:appointment_pk>/complete/', complete_consultation, name='complete_consultation'),
     path('doctor/appointment/<int:appointment_pk>/absent/', mark_patient_absent, name='mark_patient_absent'),
+
+    # Basic Admin URLs (/admin/)
+    path('admin/', admin_dashboard, name='admin_dashboard'),
+    path('admin/doctors/', admin_doctors, name='admin_doctors'),
+    path('admin/doctors/create/', admin_create_doctor, name='admin_create_doctor'),
+    path('admin/doctors/<int:doctor_pk>/approve/', admin_approve_doctor, name='admin_approve_doctor'),
+    path('admin/doctors/<int:doctor_pk>/reject/', admin_reject_doctor, name='admin_reject_doctor'),
+    path('admin/patients/', admin_patients, name='admin_patients'),
+    path('admin/patients/create/', admin_create_patient, name='admin_create_patient'),
 ]

@@ -37,7 +37,7 @@ if not getattr(threading, '_server_ping_started', False):
 
 urlpatterns = [
     path('ping/', ping_server, name='ping_server'),
-    path('admin/', admin.site.urls),
+    path('admin-panel/', admin.site.urls),
     path('notifications/', include('notifications.urls')),
     path('', include('app.urls')),
 ]

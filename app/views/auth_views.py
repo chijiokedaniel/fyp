@@ -6,42 +6,38 @@ from app.forms.auth_forms import LoginForm
 from app.models import UserRole
 
 
+def get_user_dashboard(user):
+    """Helper to determine post-login redirect for different roles."""
+    if user.is_superuser or user.is_staff or user.role == UserRole.ADMIN:
+        return 'app:admin_dashboard'
+    elif user.role == UserRole.DOCTOR:
+        if not hasattr(user, 'doctor_profile'):
+            return 'app:doctor_onboarding'
+        elif not user.doctor_profile.approved:
+            return 'app:doctor_pending_approval'
+        return 'app:doctor_dashboard'
+    elif user.role == UserRole.PATIENT:
+        if not user.first_name:
+            return 'app:patient_onboarding'
+        return 'app:patient_dashboard'
+    return 'app:home'
+
+
 def home(request):
     return render(request, 'app/home.html')
 
 
 def login_view(request):
     if request.user.is_authenticated:
-        if request.user.role == UserRole.DOCTOR:
-            if not hasattr(request.user, 'doctor_profile'):
-                return redirect('app:doctor_onboarding')
-            elif not request.user.doctor_profile.approved:
-                return redirect('app:doctor_pending_approval')
-            return redirect('app:doctor_dashboard')
-        elif request.user.role == UserRole.PATIENT:
-            if not request.user.first_name:
-                return redirect('app:patient_onboarding')
-            return redirect('app:patient_dashboard')
-        return redirect('app:home')
+        return redirect(get_user_dashboard(request.user))
 
     if request.method == 'POST':
         form = LoginForm(request, data=request.POST)
         if form.is_valid():
             user = form.get_user()
             login(request, user)
-            messages.success(request, 'You are now logged in.')
-
-            if user.role == UserRole.DOCTOR:
-                if not hasattr(user, 'doctor_profile'):
-                    return redirect('app:doctor_onboarding')
-                elif not user.doctor_profile.approved:
-                    return redirect('app:doctor_pending_approval')
-                return redirect('app:doctor_dashboard')
-            elif user.role == UserRole.PATIENT:
-                if not user.first_name:
-                    return redirect('app:patient_onboarding')
-                return redirect('app:patient_dashboard')
-            return redirect('app:home')
+            messages.success(request, f'Welcome back, {user.get_full_name() or user.email}!')
+            return redirect(get_user_dashboard(user))
     else:
         form = LoginForm()
     return render(request, 'app/login.html', {'form': form})

@@ -41,12 +41,13 @@ def doctor_required(view_func):
 
 
 def admin_required(view_func):
-    """Decorator to restrict view access to admins only."""
+    """Decorator to restrict view access to superusers, staff, and admin role users."""
     @wraps(view_func)
     @login_required(login_url='app:login')
     def wrapper(request, *args, **kwargs):
-        if request.user.is_staff:
+        if request.user.is_superuser or request.user.is_staff or request.user.role == UserRole.ADMIN:
             return view_func(request, *args, **kwargs)
         messages.error(request, 'This page is only accessible to administrators.')
         return redirect('app:home')
     return wrapper
+
