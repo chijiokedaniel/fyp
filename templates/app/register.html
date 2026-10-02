@@ -1,8 +1,8 @@
 {% extends 'app/base.html' %}
-{% block title %}Patient Registration{% endblock %}
+{% block title %}Create Account{% endblock %}
 
 {% block main_content %}
-<div style="max-width: 520px; margin: 40px auto; padding: 0 16px;">
+<div style="max-width: 560px; margin: 40px auto; padding: 0 16px;">
     {% if form.non_field_errors %}
         <div id="register-error-toast" class="top-right-toast toast-modal toast-warning" style="position: fixed; top: 20px; right: 20px; max-width: 400px; z-index: 1200; background: linear-gradient(180deg, #1e293b, #0f172a); border: 1px solid #f59e0b; color: #ffffff; padding: 14px 16px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.4); display: flex; align-items: flex-start; gap: 12px; transition: all 0.3s ease;">
             <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 22px; height: 22px; flex-shrink: 0; margin-top: 2px;">
@@ -21,38 +21,141 @@
 
     <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 18px; padding: 40px 32px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03);">
         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
-            <!-- Step indicators removed -->
+            <div id="step-badge" style="display: inline-flex; align-items: center; gap: 8px; background: #eff6ff; color: #2563eb; font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 9999px; border: 1px solid #bfdbfe; text-transform: uppercase; letter-spacing: 0.05em; transition: all 0.2s;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                Step 1 of 2: Account Credentials
+            </div>
+            <span style="font-size: 12px; color: #64748b; font-weight: 600;">Automated Hospital System</span>
         </div>
 
-        <h1 style="font-size: 24px; font-weight: 800; color: #0f172a; margin: 0 0 8px; letter-spacing: -0.02em;">Create Patient Account</h1>
-        <p style="color: #64748b; font-size: 14px; margin: 0 0 28px; line-height: 1.5;">Enter your account credentials to begin your medical onboarding process.</p>
+        <h1 style="font-size: 24px; font-weight: 800; color: #0f172a; margin: 0 0 8px; letter-spacing: -0.02em;">Create Your Account</h1>
+        <p style="color: #64748b; font-size: 14px; margin: 0 0 24px; line-height: 1.5;">Choose whether you are joining as a patient or a doctor. Doctors will choose their medical specialization in the next onboarding step.</p>
 
-        <form method="post" novalidate>
+        <form method="post" novalidate id="unified-register-form">
             {% csrf_token %}
-            {% for field in form %}
-                <div style="margin-bottom: 20px;">
-                    <label for="{{ field.id_for_label }}" style="display: block; font-size: 13.5px; font-weight: 600; color: #334155; margin-bottom: 6px;">
-                        {{ field.label }}
-                    </label>
-                    {{ field }}
-                    {% if field.errors %}
-                        <div style="color: #ef4444; font-size: 12px; margin-top: 6px; font-weight: 500; display: flex; align-items: center; gap: 4px;">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                            {% for error in field.errors %}{{ error }}{% endfor %}
+
+            <!-- Role Selector -->
+            <div style="margin-bottom: 22px;">
+                <label style="display: block; font-size: 13.5px; font-weight: 600; color: #334155; margin-bottom: 8px;">
+                    I am registering as:
+                </label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;" id="role-selector-container">
+                    <!-- Patient Role Option -->
+                    <label for="id_role_patient" id="role-card-patient" style="border: 2px solid {% if selected_role == 'patient' %}#2563eb{% else %}#e2e8f0{% endif %}; background: {% if selected_role == 'patient' %}#eff6ff{% else %}#ffffff{% endif %}; border-radius: 12px; padding: 14px; cursor: pointer; display: flex; flex-direction: column; gap: 8px; transition: all 0.2s ease;">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <input type="radio" name="role" value="patient" id="id_role_patient" {% if selected_role == 'patient' %}checked{% endif %} style="accent-color: #2563eb; width: 17px; height: 17px; cursor: pointer;">
+                                <span id="patient-role-title" style="font-weight: 700; font-size: 14px; color: {% if selected_role == 'patient' %}#1e40af{% else %}#334155{% endif %};">Patient</span>
+                            </div>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" width="22" height="22" style="flex-shrink: 0;">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                <circle cx="12" cy="7" r="4"/>
+                            </svg>
                         </div>
+                        <span style="font-size: 12px; color: #64748b; line-height: 1.4;">Book appointments &amp; consult medical specialists</span>
+                    </label>
+
+                    <!-- Doctor Role Option -->
+                    <label for="id_role_doctor" id="role-card-doctor" style="border: 2px solid {% if selected_role == 'doctor' %}#059669{% else %}#e2e8f0{% endif %}; background: {% if selected_role == 'doctor' %}#ecfdf5{% else %}#ffffff{% endif %}; border-radius: 12px; padding: 14px; cursor: pointer; display: flex; flex-direction: column; gap: 8px; transition: all 0.2s ease;">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <input type="radio" name="role" value="doctor" id="id_role_doctor" {% if selected_role == 'doctor' %}checked{% endif %} style="accent-color: #059669; width: 17px; height: 17px; cursor: pointer;">
+                                <span id="doctor-role-title" style="font-weight: 700; font-size: 14px; color: {% if selected_role == 'doctor' %}#065f46{% else %}#334155{% endif %};">Doctor</span>
+                            </div>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" width="22" height="22" style="flex-shrink: 0;">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                                <polyline points="22 4 12 14.01 9 11.01"/>
+                            </svg>
+                        </div>
+                        <span style="font-size: 12px; color: #64748b; line-height: 1.4;">Medical professional providing healthcare consultations</span>
+                    </label>
+                </div>
+                {% if form.role.errors %}
+                    <div style="color: #ef4444; font-size: 12px; margin-top: 6px; font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        {% for error in form.role.errors %}{{ error }}{% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Contextual Info Banner -->
+            <div id="role-info-banner" style="background: {% if selected_role == 'doctor' %}#ecfdf5{% else %}#eff6ff{% endif %}; border: 1px solid {% if selected_role == 'doctor' %}#a7f3d0{% else %}#bfdbfe{% endif %}; border-radius: 12px; padding: 12px 14px; margin-bottom: 22px; font-size: 13px; color: {% if selected_role == 'doctor' %}#065f46{% else %}#1e40af{% endif %}; display: flex; align-items: flex-start; gap: 10px; transition: all 0.2s;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" style="flex-shrink: 0; margin-top: 1px;">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="16" x2="12" y2="12"/>
+                    <line x1="12" y1="8" x2="12.01" y2="8"/>
+                </svg>
+                <div id="role-info-text" style="line-height: 1.45;">
+                    {% if selected_role == 'doctor' %}
+                        <strong>Next Step:</strong> You will choose your <strong>medical specialization</strong>, background bio, and credentials during medical onboarding.
+                    {% else %}
+                        <strong>Next Step:</strong> You will complete your personal profile details in the patient onboarding step to begin booking appointments.
                     {% endif %}
                 </div>
-            {% endfor %}
+            </div>
 
-            <button type="submit" style="width: 100%; height: 48px; background: #2563eb; color: #ffffff; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25); transition: background 0.2s, transform 0.2s;">
-                Continue to Personal Profile Setup
+            <!-- Email Field -->
+            <div style="margin-bottom: 20px;">
+                <label for="{{ form.email.id_for_label }}" style="display: block; font-size: 13.5px; font-weight: 600; color: #334155; margin-bottom: 6px;">
+                    {{ form.email.label }}
+                </label>
+                {{ form.email }}
+                {% if form.email.errors %}
+                    <div style="color: #ef4444; font-size: 12px; margin-top: 6px; font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        {% for error in form.email.errors %}{{ error }}{% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Password1 Field -->
+            <div style="margin-bottom: 20px;">
+                <label for="{{ form.password1.id_for_label }}" style="display: block; font-size: 13.5px; font-weight: 600; color: #334155; margin-bottom: 6px;">
+                    {{ form.password1.label }}
+                </label>
+                {{ form.password1 }}
+                {% if form.password1.errors %}
+                    <div style="color: #ef4444; font-size: 12px; margin-top: 6px; font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        {% for error in form.password1.errors %}{{ error }}{% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Password2 Field -->
+            <div style="margin-bottom: 24px;">
+                <label for="{{ form.password2.id_for_label }}" style="display: block; font-size: 13.5px; font-weight: 600; color: #334155; margin-bottom: 6px;">
+                    {{ form.password2.label }}
+                </label>
+                {{ form.password2 }}
+                {% if form.password2.errors %}
+                    <div style="color: #ef4444; font-size: 12px; margin-top: 6px; font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        {% for error in form.password2.errors %}{{ error }}{% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" id="submit-btn" style="width: 100%; height: 48px; background: {% if selected_role == 'doctor' %}#059669{% else %}#2563eb{% endif %}; color: #ffffff; border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px {% if selected_role == 'doctor' %}rgba(5, 150, 105, 0.25){% else %}rgba(37, 99, 235, 0.25){% endif %}; transition: background 0.2s, transform 0.2s;">
+                <span id="submit-btn-text">
+                    {% if selected_role == 'doctor' %}
+                        Continue to Medical Onboarding
+                    {% else %}
+                        Continue to Personal Profile Setup
+                    {% endif %}
+                </span>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             </button>
         </form>
 
         <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #f1f5f9; text-align: center;">
             <p style="font-size: 14px; color: #64748b; margin: 0;">
-                Already have a patient account? <a href="{% url 'app:login' %}" style="color: #2563eb; font-weight: 600; text-decoration: none;">Sign in here</a>
+                Already have an account? <a href="{% url 'app:login' %}" style="color: #2563eb; font-weight: 600; text-decoration: none;">Sign in here</a>
             </p>
         </div>
     </div>
@@ -60,6 +163,7 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Toast auto-dismiss
         var toast = document.getElementById('register-error-toast');
         if (toast) {
             setTimeout(function() {
@@ -67,6 +171,73 @@
                 toast.style.transform = 'translateY(-10px)';
                 setTimeout(function() { if (toast.parentNode) toast.remove(); }, 300);
             }, 6000);
+        }
+
+        // Role Selector Interactivity
+        var patientRadio = document.getElementById('id_role_patient');
+        var doctorRadio = document.getElementById('id_role_doctor');
+        var patientCard = document.getElementById('role-card-patient');
+        var doctorCard = document.getElementById('role-card-doctor');
+        var patientTitle = document.getElementById('patient-role-title');
+        var doctorTitle = document.getElementById('doctor-role-title');
+        var stepBadge = document.getElementById('step-badge');
+        var roleInfoBanner = document.getElementById('role-info-banner');
+        var roleInfoText = document.getElementById('role-info-text');
+        var submitBtn = document.getElementById('submit-btn');
+        var submitBtnText = document.getElementById('submit-btn-text');
+
+        function updateRoleUI() {
+            if (doctorRadio && doctorRadio.checked) {
+                // Doctor active
+                doctorCard.style.borderColor = '#059669';
+                doctorCard.style.background = '#ecfdf5';
+                doctorTitle.style.color = '#065f46';
+
+                patientCard.style.borderColor = '#e2e8f0';
+                patientCard.style.background = '#ffffff';
+                patientTitle.style.color = '#334155';
+
+                stepBadge.style.color = '#059669';
+                stepBadge.style.background = '#ecfdf5';
+                stepBadge.style.borderColor = '#a7f3d0';
+
+                roleInfoBanner.style.background = '#ecfdf5';
+                roleInfoBanner.style.borderColor = '#a7f3d0';
+                roleInfoBanner.style.color = '#065f46';
+                roleInfoText.innerHTML = '<strong>Next Step:</strong> You will choose your <strong>medical specialization</strong>, background bio, and credentials during medical onboarding.';
+
+                submitBtn.style.background = '#059669';
+                submitBtn.style.boxShadow = '0 4px 12px rgba(5, 150, 105, 0.25)';
+                submitBtnText.innerText = 'Continue to Medical Onboarding';
+            } else {
+                // Patient active
+                patientCard.style.borderColor = '#2563eb';
+                patientCard.style.background = '#eff6ff';
+                patientTitle.style.color = '#1e40af';
+
+                doctorCard.style.borderColor = '#e2e8f0';
+                doctorCard.style.background = '#ffffff';
+                doctorTitle.style.color = '#334155';
+
+                stepBadge.style.color = '#2563eb';
+                stepBadge.style.background = '#eff6ff';
+                stepBadge.style.borderColor = '#bfdbfe';
+
+                roleInfoBanner.style.background = '#eff6ff';
+                roleInfoBanner.style.borderColor = '#bfdbfe';
+                roleInfoBanner.style.color = '#1e40af';
+                roleInfoText.innerHTML = '<strong>Next Step:</strong> You will complete your personal profile details in the patient onboarding step to begin booking appointments.';
+
+                submitBtn.style.background = '#2563eb';
+                submitBtn.style.boxShadow = '0 4px 12px rgba(37, 99, 235, 0.25)';
+                submitBtnText.innerText = 'Continue to Personal Profile Setup';
+            }
+        }
+
+        if (patientRadio && doctorRadio) {
+            patientRadio.addEventListener('change', updateRoleUI);
+            doctorRadio.addEventListener('change', updateRoleUI);
+            updateRoleUI();
         }
     });
 </script>

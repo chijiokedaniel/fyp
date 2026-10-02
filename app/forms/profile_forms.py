@@ -151,9 +151,10 @@ class DoctorOnboardingForm(forms.ModelForm):
         })
     )
     specialty = forms.ChoiceField(
-        choices=SpecialtyChoices.choices,
+        choices=[('', '— Choose your medical specialization —')] + list(SpecialtyChoices.choices),
         required=True,
-        label="Medical Specialty",
+        label="Medical Specialization",
+        help_text="Select your medical specialty field. Patients will find and book appointments with you under this department.",
         widget=forms.Select(attrs={'style': 'width: 100%; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 10px; background: #f8fafc; font-family: inherit; font-size: 14px;'})
     )
     bio = forms.CharField(

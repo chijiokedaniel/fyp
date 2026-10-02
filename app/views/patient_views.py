@@ -3,6 +3,7 @@ from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError, models
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 
 from app.decorators import patient_required
@@ -15,26 +16,8 @@ from notifications.notification_services import NotificationService
 
 
 def patient_register(request):
-    if request.method == 'POST':
-        form = PatientRegistrationForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)
-
-            NotificationService.send_notification(
-                recipient=user,
-                actor=None,
-                title="Complete Your Patient Profile 📋",
-                message="Welcome to Automated Hospital Management System! Please complete your personal profile to start booking appointments.",
-                category="onboarding",
-                type="info"
-            )
-
-            messages.success(request, 'Account created! Please complete your personal profile details below.')
-            return redirect('app:patient_onboarding')
-    else:
-        form = PatientRegistrationForm()
-    return render(request, 'app/register.html', {'form': form, 'title': 'Patient Account Registration'})
+    """Legacy endpoint: redirect to unified registration with patient role pre-selected."""
+    return redirect(f"{reverse('app:register')}?role=patient")
 
 
 @patient_required

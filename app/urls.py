@@ -25,6 +25,7 @@ from app.views.site_views import (
     patient_dashboard,
     patient_onboarding,
     patient_register,
+    register_view,
     request_appointment,
     respond_appointment,
     submit_appointment_feedback,
@@ -34,7 +35,8 @@ app_name = 'app'
 
 urlpatterns = [
     path('', home, name='home'),
-    path('register/', patient_register, name='patient_register'),
+    path('register/', register_view, name='register'),
+    path('patient/register/', patient_register, name='patient_register'),
     path('patient/onboarding/', patient_onboarding, name='patient_onboarding'),
     path('doctor/apply/', doctor_apply, name='doctor_apply'),
     path('doctor/onboarding/', doctor_onboarding, name='doctor_onboarding'),

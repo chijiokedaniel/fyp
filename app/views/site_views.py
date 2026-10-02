@@ -16,7 +16,7 @@ from app.views.admin_views import (
     admin_patients,
     admin_reject_doctor,
 )
-from app.views.auth_views import home, login_view, logout_view
+from app.views.auth_views import home, login_view, logout_view, register_view
 from app.views.doctor_views import (
     complete_consultation,
     doctor_apply,
@@ -41,6 +41,7 @@ from app.views.profile_views import edit_profile
 
 __all__ = [
     'home',
+    'register_view',
     'patient_register',
     'patient_onboarding',
     'doctor_apply',

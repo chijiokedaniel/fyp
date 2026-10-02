@@ -3,6 +3,7 @@ from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 
 from app.decorators import doctor_required
@@ -13,29 +14,8 @@ from notifications.notification_services import NotificationService
 
 
 def doctor_apply(request):
-    if request.method == 'POST':
-        form = DoctorApplicationForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)
-
-            NotificationService.send_notification(
-                recipient=user,
-                actor=None,
-                title="Complete Your Doctor Onboarding 🩺",
-                message="Welcome to Automated Hospital Management System! Please complete your medical onboarding details to submit your profile for administrator review.",
-                category="onboarding",
-                type="info"
-            )
-
-            messages.success(
-                request,
-                'Account created! Please complete your medical onboarding details below.',
-            )
-            return redirect('app:doctor_onboarding')
-    else:
-        form = DoctorApplicationForm()
-    return render(request, 'app/doctor_application.html', {'form': form, 'title': 'Doctor Registration'})
+    """Legacy endpoint: redirect to unified registration with doctor role pre-selected."""
+    return redirect(f"{reverse('app:register')}?role=doctor")
 
 
 @login_required
@@ -70,7 +50,11 @@ def doctor_onboarding(request):
             messages.success(request, 'Medical profile submitted successfully! Your application is now under review.')
             return redirect('app:doctor_pending_approval')
     else:
-        form = DoctorOnboardingForm()
+        form = DoctorOnboardingForm(initial={
+            'first_name': request.user.first_name,
+            'last_name': request.user.last_name,
+            'phone': request.user.phone,
+        })
 
     return render(request, 'app/doctor_onboarding.html', {'form': form, 'doctor': request.user})
 

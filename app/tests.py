@@ -249,3 +249,87 @@ class AdminWorkflowTests(TestCase):
         created_patient = User.objects.get(email='alice@example.com')
         self.assertEqual(created_patient.role, UserRole.PATIENT)
 
+
+class UnifiedRegistrationAndOnboardingTests(TestCase):
+    def test_registration_page_get_defaults(self):
+        response = self.client.get(reverse('app:register'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Create Your Account")
+        self.assertContains(response, "Patient")
+        self.assertContains(response, "Doctor")
+        self.assertEqual(response.context['selected_role'], 'patient')
+
+    def test_registration_page_get_with_doctor_param(self):
+        response = self.client.get(reverse('app:register') + '?role=doctor')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['selected_role'], 'doctor')
+
+    def test_legacy_doctor_apply_redirects_to_register(self):
+        response = self.client.get(reverse('app:doctor_apply'))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/register/?role=doctor', response.url)
+
+    def test_legacy_patient_register_redirects_to_register(self):
+        response = self.client.get(reverse('app:patient_register'))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/register/?role=patient', response.url)
+
+    def test_patient_registration_flow(self):
+        response = self.client.post(reverse('app:register'), {
+            'role': UserRole.PATIENT,
+            'email': 'new_patient@example.com',
+            'password1': 'StrongPass123!',
+            'password2': 'StrongPass123!',
+        })
+        self.assertRedirects(response, reverse('app:patient_onboarding'))
+
+        user = User.objects.get(email='new_patient@example.com')
+        self.assertEqual(user.role, UserRole.PATIENT)
+        self.assertTrue(user.is_authenticated)
+
+    def test_doctor_registration_and_specialization_onboarding(self):
+        # 1. Register as a doctor on the unified registration page
+        response = self.client.post(reverse('app:register'), {
+            'role': UserRole.DOCTOR,
+            'email': 'dr_new@hospital.com',
+            'password1': 'StrongPass123!',
+            'password2': 'StrongPass123!',
+        })
+        self.assertRedirects(response, reverse('app:doctor_onboarding'))
+
+        doctor = User.objects.get(email='dr_new@hospital.com')
+        self.assertEqual(doctor.role, UserRole.DOCTOR)
+
+        # 2. Access doctor onboarding page - doctor must choose specialization
+        onboarding_page = self.client.get(reverse('app:doctor_onboarding'))
+        self.assertEqual(onboarding_page.status_code, 200)
+        self.assertContains(onboarding_page, "Medical Specialization")
+
+        # 3. Doctor submits onboarding with specialization (e.g. Cardiology)
+        submit_response = self.client.post(reverse('app:doctor_onboarding'), {
+            'first_name': 'Leonard',
+            'last_name': 'McCoy',
+            'phone': '5551234567',
+            'specialty': SpecialtyChoices.CARDIOLOGY,
+            'bio': 'Chief medical officer and cardiologist.',
+        })
+        self.assertRedirects(submit_response, reverse('app:doctor_pending_approval'))
+
+        doctor.refresh_from_db()
+        self.assertEqual(doctor.first_name, 'Leonard')
+        self.assertEqual(doctor.last_name, 'McC McCoy'.replace('McC McCoy', 'McCoy'))
+        self.assertTrue(hasattr(doctor, 'doctor_profile'))
+        self.assertEqual(doctor.doctor_profile.specialty, SpecialtyChoices.CARDIOLOGY)
+        self.assertFalse(doctor.doctor_profile.approved)
+
+    def test_registration_password_mismatch_validation(self):
+        response = self.client.post(reverse('app:register'), {
+            'role': UserRole.PATIENT,
+            'email': 'mismatch@example.com',
+            'password1': 'Secret123',
+            'password2': 'DifferentPass123',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(User.objects.filter(email='mismatch@example.com').exists())
+        self.assertContains(response, "Passwords do not match.")
+
